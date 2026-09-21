@@ -51,6 +51,14 @@
                         </select>
                         <small class="text-muted">Если пусто — учитываются все модели выбранных марок</small>
                     </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Период анализа статистики продаж (дней)</label>
+                        <div class="input-group">
+                            <input type="number" name="analysis_period_days" class="form-control" min="7" max="730" value="{{ params.brand_edit.analysis_period_days|default:'' }}" placeholder="По умолчанию ({{ params.default_analysis_days }} дн.)">
+                            <span class="input-group-text">дней</span>
+                        </div>
+                        <small class="text-muted">Индивидуальная глубина выборки для АвтоК. Если не заполнено — используется общее значение ({{ params.default_analysis_days }} дн.)</small>
+                    </div>
                     <div class="col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">{% if params.brand_edit %}Сохранить{% else %}Добавить{% endif %}</button>
                         {% if params.brand_edit %}
@@ -70,6 +78,7 @@
                             <th>Название</th>
                             <th>Марки</th>
                             <th>Модели</th>
+                            <th>Период статистики</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -79,6 +88,13 @@
                             <td>{{ b.name }}</td>
                             <td>{% for m in b.marks.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
                             <td>{% for m in b.models_included.all %}{{ m.mark.name }} {{ m.name }}{% if not forloop.last %}; {% endif %}{% empty %}все модели марок{% endfor %}</td>
+                            <td>
+                                {% if b.analysis_period_days %}
+                                    <span class="badge text-bg-primary">{{ b.analysis_period_days }} дн.</span>
+                                {% else %}
+                                    <span class="text-muted small">По умолч. ({{ params.default_analysis_days }} дн.)</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <a href="?edit={{ b.pk }}" class="btn btn-outline-primary btn-sm me-1">Изменить</a>
                                 <form method="post" action="{% url 'prices_car:brands' %}" class="d-inline" onsubmit="return confirm('Удалить бренд?');">
@@ -91,7 +107,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">Нет брендов. Добавьте первый выше.</td>
+                            <td colspan="5" class="text-center text-muted py-4">Нет брендов. Добавьте первый выше.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -2464,6 +2464,8 @@ class RefCarsOrganization(models.Model):
                     'avg_sale_days': result.get('avg_sale_days'),
                     'car_cost': result.get('car_cost'),
                     'fallback': result.get('fallback', False),
+                    'analysis_days': result.get('analysis_days'),
+                    'is_yellow': result.get('is_yellow'),
                 }
 
             target_cum_plain = calculate_target_cum(
@@ -2471,12 +2473,14 @@ class RefCarsOrganization(models.Model):
                 brand_km=info.get('brand_km'),
                 irc=info.get('irc'),
                 with_trade_in=False,
+                is_yellow=self.is_yellow,
             )
             target_cum_ti = calculate_target_cum(
                 self,
                 brand_km=info.get('brand_km'),
                 irc=info.get('irc'),
                 with_trade_in=True,
+                is_yellow=self.is_yellow,
             )
             if target_cum_plain:
                 info['automatic_k'] = _pack_target_cum(target_cum_plain)

@@ -139,10 +139,22 @@ def get_client_suggestions_qs(car, unit_id, reference_km):
         return RefCarsOrganization.objects.none()
 
     qs = _annotate_last_km(_suggestions_base_qs(car, unit_id))
+
+    target_color = (car.color or '').strip() if car else ''
+    if target_color:
+        same_color_case = Case(
+            When(color__iexact=target_color, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        )
+    else:
+        same_color_case = Value(0, output_field=IntegerField())
+
     qs = qs.filter(
         last_km__isnull=False,
         last_km__lt=reference_km,
     ).annotate(
+        same_color_priority=same_color_case,
         reported_priority=Case(
             When(date_report__year__gte=REPORTED_CAR_MIN_YEAR, then=Value(0)),
             default=Value(1),
@@ -157,7 +169,7 @@ def get_client_suggestions_qs(car, unit_id, reference_km):
         'unit',
         'status',
         'status_availability',
-    ).order_by('reported_priority', 'last_km', 'price', 'name')
+    ).order_by('same_color_priority', 'reported_priority', 'last_km', 'price', 'name')
     return qs
 
 
@@ -165,7 +177,7 @@ def count_client_suggestions(car, unit_id, reference_km):
     return get_client_suggestions_qs(car, unit_id, reference_km).count()
 
 
-def serialize_client_suggestion(car, reference_km, kvp):
+def serialize_client_suggestion(car, reference_km, kvp, target_car=None):
     km = int(car.last_km or 0)
     delta = int(reference_km) - km
     kvp_val = int(kvp or 0)
@@ -180,6 +192,16 @@ def serialize_client_suggestion(car, reference_km, kvp):
     if car.complectation_autoru_id:
         complectation = car.complectation_autoru.name
 
+    target_color = (target_car.color or '').strip().lower() if target_car else ''
+    car_color = (car.color or '').strip()
+    is_same_color = bool(target_color and car_color.lower() == target_color)
+    is_yellow = car_is_reported(car)
+    date_report_str = (
+        car.date_report.strftime('%d.%m.%Y')
+        if (car.date_report and car.date_report.year >= REPORTED_CAR_MIN_YEAR)
+        else ''
+    )
+
     return {
         'id': car.pk,
         'slug': car.slug,
@@ -188,6 +210,8 @@ def serialize_client_suggestion(car, reference_km, kvp):
         'mark': mark_name,
         'model': model_name,
         'complectation': complectation,
+        'color': car_color,
+        'is_same_color': is_same_color,
         'price': car.price or 0,
         'km': km,
         'km_delta': delta,
@@ -200,7 +224,9 @@ def serialize_client_suggestion(car, reference_km, kvp):
         'approval_passes': kvp_val > km if kvp_val else False,
         'price_url': '/cars/{}/price/'.format(car.slug) if car.slug else '',
         'car_url': '/cars/{}/'.format(car.slug) if car.slug else '',
-        'is_reported': car_is_reported(car),
+        'is_reported': is_yellow,
+        'is_yellow': is_yellow,
+        'date_report_str': date_report_str,
         'status_availability': (
             car.status_availability.name if car.status_availability_id else ''
         ),
@@ -211,10 +237,11 @@ def serialize_client_suggestion(car, reference_km, kvp):
 def list_client_suggestions(car, unit_id, reference_km, kvp, limit=SUGGESTIONS_LIMIT):
     allow_dc = brand_allows_dc_transfers(car)
     qs = get_client_suggestions_qs(car, unit_id, reference_km)[:limit]
-    items = [serialize_client_suggestion(item, reference_km, kvp) for item in qs]
+    items = [serialize_client_suggestion(item, reference_km, kvp, target_car=car) for item in qs]
     total = count_client_suggestions(car, unit_id, reference_km)
     filter_label = _suggestions_filter_label(car)
     scope_label = _suggestions_scope_label(allow_dc)
+    target_color = (car.color or '').strip() if car else ''
     return {
         'items': items,
         'total': total,
@@ -223,6 +250,7 @@ def list_client_suggestions(car, unit_id, reference_km, kvp, limit=SUGGESTIONS_L
         'kvp': int(kvp or 0),
         'model_name': filter_label,
         'filter_label': filter_label,
+        'target_color': target_color,
         'same_complectation': bool(car.complectation_autoru_id),
         'allow_dc_transfers': allow_dc,
         'scope_label': scope_label,

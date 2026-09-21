@@ -86,6 +86,28 @@
               <div class="col-sm-4"><span class="text-muted">Себестоимость</span><br><strong>{{ params.car.cost_price|formatted_number }} ₽</strong></div>
               <div class="col-sm-4"><span class="text-muted">Ручной min КМ</span><br><strong>{% if params.car.min_km %}{{ params.car.min_km|formatted_number }} ₽{% else %}—{% endif %}</strong></div>
               <div class="col-sm-4"><span class="text-muted">Дней на складе</span><br><strong>{{ params.car.days_in_stok|default:"—" }}</strong></div>
+              <div class="col-sm-4">
+                <span class="text-muted">Жёлтый АМ</span><br>
+                {% if params.km_breakdown.is_yellow %}
+                  <span class="badge bg-warning text-dark">Да{% if params.km_breakdown.date_report_str %} (отчитан: {{ params.km_breakdown.date_report_str }}){% endif %}</span>
+                {% else %}
+                  <span class="badge bg-light text-muted border">Нет{% if params.km_breakdown.date_report_str %} (рапорт: {{ params.km_breakdown.date_report_str }}){% endif %}</span>
+                {% endif %}
+              </div>
+              <div class="col-sm-4">
+                <span class="text-muted">Период анализа</span><br>
+                <strong>{{ params.km_breakdown.analysis_days }} дн.</strong>
+              </div>
+              {% if params.km_breakdown.brand_km %}
+              <div class="col-sm-4">
+                <span class="text-muted">КМ бренда на месяц</span><br>
+                <strong>{{ params.km_breakdown.brand_km.km_display }}</strong>
+              </div>
+              <div class="col-sm-4">
+                <span class="text-muted">Мин. КМ ДЦ</span><br>
+                <strong>{{ params.km_breakdown.brand_km.km_min_dc_display }}</strong>
+              </div>
+              {% endif %}
             </div>
           </div>
         </div>

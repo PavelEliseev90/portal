@@ -1084,12 +1084,16 @@ def simulate_deal_calculation(
     dop_margin: int = 0,
     work_margin: int = 0,
     insurance_margin: int = 0,
+    analysis_days_override: Optional[int] = None,
 ) -> dict:
     """
     Симулятор расчета сделки для тестирования правил ценообразования, дисконтов и тактик.
-    Возвращает детальный протокол расчета, КВП, расчетный КМ и статус автосогласования.
+    Возвращает детальный протокол расчета, КВП, расчетный КМ, пороги ДЦ/УК и статус автосогласования.
     """
-    from prices_car.target_cum import calculate_target_cum
+    from avtosalon.deal_calc_approval_report import is_yellow_car_at_date
+    from prices_car.brand_resolve import resolve_price_car_brand_for_car
+    from prices_car.models import BrandKM
+    from prices_car.target_cum import calculate_target_cum, get_analysis_days_for_car
 
     car = None
     if car_id:
@@ -1136,8 +1140,9 @@ def simulate_deal_calculation(
     }
     tactic_label = tactic_label_map.get(effective_tactic, 'Баланс')
 
-    # Определение признака «желтый»
-    is_yellow = is_yellow_override if is_yellow_override is not None else car.is_yellow
+    # Определение признака «желтый» (сдан рапорт перед импортером)
+    is_yellow_detected, date_report_str = is_yellow_car_at_date(car)
+    is_yellow = is_yellow_override if is_yellow_override is not None else is_yellow_detected
 
     # Определение ключевой модели
     is_key_model = False
@@ -1182,11 +1187,25 @@ def simulate_deal_calculation(
         + effective_ins
     )
 
+    # Определение бренда и нормативов КМ на месяц
+    brand_car = resolve_price_car_brand_for_car(car) if car else None
+    brand_km_obj = BrandKM.objects.filter(brand=brand_car).order_by('month').last() if brand_car else None
+    brand_km_val = int(brand_km_obj.km) if brand_km_obj and brand_km_obj.km else 0
+    km_min_dc = int(brand_km_obj.km_min_dc) if brand_km_obj and brand_km_obj.km_min_dc else 0
+
+    # Определение периода анализа статистики продаж
+    if analysis_days_override and int(analysis_days_override) > 0:
+        effective_analysis_days = int(analysis_days_override)
+    else:
+        effective_analysis_days = get_analysis_days_for_car(car, brand=brand_car)
+
     # 1. Расчет базового АвтоК (Вариант 3)
     target_cum_result = calculate_target_cum(
         car,
         with_trade_in=with_trade_in,
         dc_tactic=effective_tactic,
+        analysis_days=effective_analysis_days,
+        is_yellow=is_yellow,
     )
 
     base_km = 0
@@ -1211,9 +1230,6 @@ def simulate_deal_calculation(
     car.unit = unit
     car.type_sale = type_sale
 
-    mark = car_model.mark if car_model else None
-    brand_car = PriceCarBrand.objects.filter(marks=mark).first() if mark else None
-
     matched_discount = None
     discount_pct = 0.0
     discount_rub = 0
@@ -1235,16 +1251,36 @@ def simulate_deal_calculation(
     final_km_rule = int(round(max(km_after_pct - discount_rub, 0)))
     discount_rub_impact = final_km_rule - base_km
 
-    # 4. Проверка условий автосогласования (Вердикт)
+    # 4. Проверка условий автосогласования (Вердикт) с учетом минимального КМ ДЦ
     diff = total_deal_kvp - final_km_rule
+    diff_min_dc = total_deal_kvp - km_min_dc if km_min_dc > 0 else 0
 
-    if diff >= 0:
+    if diff > 0 and (km_min_dc <= 0 or total_deal_kvp > km_min_dc):
         verdict_status = 'approved'
         verdict_badge = 'Согласовано автоматически'
         verdict_class = 'success'
+        min_dc_note = f' и выше мин. порога ДЦ ({km_min_dc:,} ₽)' if km_min_dc > 0 else ''
         verdict_msg = (
             f'КВП сделки ({total_deal_kvp:,} ₽) превышает расчетное правило КМ ({final_km_rule:,} ₽) '
-            f'на +{diff:,} ₽. Сделка проходит без согласований.'
+            f'на +{diff:,} ₽{min_dc_note}. Сделка проходит автосогласование.'
+        ).replace(',', ' ')
+    elif km_min_dc > 0 and total_deal_kvp <= km_min_dc:
+        verdict_status = 'uk_required'
+        verdict_badge = 'Требуется согласование УК'
+        verdict_class = 'danger'
+        verdict_msg = (
+            f'КВП сделки ({total_deal_kvp:,} ₽) ниже минимального порога ДЦ ({km_min_dc:,} ₽) '
+            f'на {abs(diff_min_dc):,} ₽. Директор ДЦ не имеет полномочий согласовать сделку. '
+            f'Требуется прямое согласование Управляющей Компании (УК).'
+        ).replace(',', ' ')
+    elif km_min_dc > 0 and total_deal_kvp > km_min_dc:
+        verdict_status = 'director_required'
+        verdict_badge = 'Требуется директор ДЦ'
+        verdict_class = 'warning'
+        verdict_msg = (
+            f'КВП сделки ({total_deal_kvp:,} ₽) ниже расчетного правила КМ ({final_km_rule:,} ₽) '
+            f'на {abs(diff):,} ₽, но выше минимального порога ДЦ ({km_min_dc:,} ₽). '
+            f'Директор ДЦ может согласовать сделку без эскалации в УК.'
         ).replace(',', ' ')
     elif diff >= -50000:
         verdict_status = 'director_required'
@@ -1274,9 +1310,9 @@ def simulate_deal_calculation(
     steps = [
         {
             'step': 1,
-            'title': 'Целевой КМ аналогов (АвтоК)',
+            'title': f'Целевой КМ аналогов (АвтоК, {effective_analysis_days} дн.)',
             'value': f'{base_km:,} ₽'.replace(',', ' '),
-            'formula': f'Себестоимость ({cost_price:,} ₽) × Медиана ({median_margin_pct}%) × Ликвидность (×{liquidity_mult}) × Тактика {tactic_label} (×{tactic_mult})'.replace(',', ' '),
+            'formula': f'Себестоимость ({cost_price:,} ₽) × Медиана ({median_margin_pct}%) × Ликвидность (×{liquidity_mult}) × Тактика {tactic_label} (×{tactic_mult}) [период: {effective_analysis_days} дн.]'.replace(',', ' '),
             'comment': cum_description,
         },
         {
@@ -1300,6 +1336,16 @@ def simulate_deal_calculation(
             'formula': f'Маржа авто ({car_margin:,} ₽) + Trade-in ({effective_tradein_margin:,} ₽) + ОПФУ ({effective_opfu:,} ₽) + Допы ({effective_dop:,} ₽) + З/Ч ({effective_work + effective_ins:,} ₽)'.replace(',', ' '),
             'comment': f'Цена продажи: {actual_sale_price:,} ₽ (скидка {actual_discount:,} ₽ от РРЦ)'.replace(',', ' '),
         },
+        {
+            'step': 5,
+            'title': 'Контроль порогов согласования (ДЦ и УК)',
+            'value': verdict_badge,
+            'formula': (
+                f'КВП: {total_deal_kvp:,} ₽ | Правило КМ: {final_km_rule:,} ₽ | '
+                f'Мин. КМ ДЦ: {km_min_dc:,} ₽ | План бренда: {brand_km_val:,} ₽'
+            ).replace(',', ' '),
+            'comment': verdict_msg,
+        },
     ]
 
     return {
@@ -1312,6 +1358,7 @@ def simulate_deal_calculation(
             'cost_price': cost_price,
             'days_in_stok': car.days_in_stok,
             'is_yellow': is_yellow,
+            'date_report_str': date_report_str,
         },
         'parameters': {
             'unit_name': unit.name if unit else '—',
@@ -1319,11 +1366,15 @@ def simulate_deal_calculation(
             'tactic': effective_tactic,
             'tactic_label': tactic_label,
             'is_yellow': is_yellow,
+            'date_report_str': date_report_str,
             'is_key_model': is_key_model,
             'with_trade_in': with_trade_in,
             'with_credit': with_credit,
             'actual_sale_price': actual_sale_price,
             'actual_discount': actual_discount,
+            'analysis_days': effective_analysis_days,
+            'brand_km': brand_km_val,
+            'km_min_dc': km_min_dc,
         },
         'breakdown': {
             'car_margin': car_margin,
@@ -1337,6 +1388,9 @@ def simulate_deal_calculation(
             'discount_rub_impact': discount_rub_impact,
             'final_km_rule': final_km_rule,
             'diff': diff,
+            'brand_km': brand_km_val,
+            'km_min_dc': km_min_dc,
+            'diff_min_dc': diff_min_dc,
         },
         'verdict': {
             'status': verdict_status,

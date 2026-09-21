@@ -22,6 +22,31 @@ LIQUIDITY_BANDS = (
 )
 
 
+def get_analysis_days_for_car(car, brand=None) -> int:
+    """
+    Определить период анализа статистики продаж (в днях) для автомобиля.
+    Приоритет:
+    1. Индивидуальный analysis_period_days бренда (PriceCarBrand).
+    2. Общий период по умолчанию из настроек алгоритма (PriceCarAlgorithmSettings).
+    3. Константа ANALYSIS_DAYS = 60 (fallback).
+    """
+    if brand is None and car is not None:
+        try:
+            from prices_car.brand_resolve import resolve_price_car_brand_for_car
+            brand = resolve_price_car_brand_for_car(car)
+        except Exception:
+            brand = None
+
+    if brand and getattr(brand, 'analysis_period_days', None):
+        return int(brand.analysis_period_days)
+
+    try:
+        from prices_car.models import PriceCarAlgorithmSettings
+        return PriceCarAlgorithmSettings.get_default_analysis_days()
+    except Exception:
+        return ANALYSIS_DAYS
+
+
 def _liquidity_multiplier(ratio: float) -> tuple[float, str]:
     if ratio <= 0:
         return 1.0, 'Норма'
@@ -34,7 +59,7 @@ def _liquidity_multiplier(ratio: float) -> tuple[float, str]:
         return 0.94, 'Замедленная'
     if ratio < 8:
         return 0.79, 'Зависшая'
-    return 0.63, 'Глубокая'
+    return 0.63, 'Глубокий сток (максимальное снижение порога)'
 
 
 def _cumulative_margin(record) -> float:
@@ -79,15 +104,6 @@ def _median(values: list[float]) -> float:
     return float(statistics.median(values))
 
 
-def _liquidity_multiplier(ratio: float) -> tuple[float, str]:
-    if ratio <= 0:
-        return 1.0, 'Норма'
-    for threshold, multiplier, label in LIQUIDITY_BANDS:
-        if ratio <= threshold:
-            return multiplier, label
-    return 0.63, 'Глубокая'
-
-
 def _model_modification_ids(car) -> set[int]:
     from refs.models import AutoruModification
 
@@ -99,8 +115,11 @@ def _model_modification_ids(car) -> set[int]:
     )
 
 
-def _fetch_sales_records(car, days: int = ANALYSIS_DAYS) -> list[dict]:
+def _fetch_sales_records(car, days: int | None = None) -> list[dict]:
     from powerbi.models import Cumulative
+
+    if days is None:
+        days = get_analysis_days_for_car(car)
 
     mark = car.modification_autoru.model.mark.name.upper()
     dt_end = datetime.now()
@@ -197,7 +216,7 @@ def _search_analog_set(
     return None, None
 
 
-def _brand_monthly_fallback(car, brand_km, irc) -> dict | None:
+def _brand_monthly_fallback(car, brand_km, irc, is_yellow: bool = False) -> dict | None:
     """Целевой КМ на месяц (BrandKM), если аналогов недостаточно."""
     from refs.models import RefCarsOrganization
 
@@ -232,19 +251,26 @@ def _brand_monthly_fallback(car, brand_km, irc) -> dict | None:
             km_value = brand_km_val
         description = f'Fallback: целевой КМ бренда {mark.name} без стока марки'
 
+    liquidity_mult = 0.63 if is_yellow else 1.0
+    liquidity_lbl = 'Глубокий сток (максимальное снижение порога)' if is_yellow else 'Норма'
+    if is_yellow:
+        km_value = km_value * liquidity_mult
+        description += f' [жёлтый АМ: {liquidity_lbl} ×{liquidity_mult}]'
+
     return {
         'km_min_automatic': round(km_value, 2),
         'km_description': description,
         'fallback': True,
         'median_margin_pct': None,
-        'liquidity_multiplier': 1.0,
-        'liquidity_label': 'Норма',
+        'liquidity_multiplier': liquidity_mult,
+        'liquidity_label': liquidity_lbl,
         'analog_count': 0,
         'search_label': 'Целевой КМ на месяц',
         'days_in_stock': car.days_in_stok or 0,
         'avg_sale_days': None,
         'liquidity_ratio': None,
         'car_cost': car.cost_price or 0,
+        'is_yellow': is_yellow,
     }
 
 
@@ -262,14 +288,21 @@ def calculate_target_cum(
     irc=None,
     with_trade_in: bool = False,
     dc_tactic: str | None = None,
+    analysis_days: int | None = None,
+    is_yellow: bool | None = None,
 ) -> dict | None:
     """
     Рассчитать целевую кумулятивную маржу (АвтоК) для автомобиля.
     Возвращает dict в формате automatic_* или None.
-    Поддерживает тактику ДЦ (max_margin, balanced, max_volume).
+    Поддерживает тактику ДЦ (max_margin, balanced, max_volume) и период анализа.
+    Для «жёлтых» автомобилей (сдан рапорт перед импортером) сразу применяется
+    коэффициент ликвидности «Глубокий сток (максимальное снижение порога)» (×0.63).
     """
     if car is None or car.modification_autoru is None:
         return None
+
+    if is_yellow is None:
+        is_yellow = bool(getattr(car, 'is_yellow', False))
 
     # Определение тактики ДЦ, если не передана явно
     if dc_tactic is None and getattr(car, 'unit_id', None):
@@ -287,9 +320,13 @@ def calculate_target_cum(
 
     car_cost = int(car.cost_price or 0)
     if car_cost <= 0:
-        return _brand_monthly_fallback(car, brand_km, irc)
+        return _brand_monthly_fallback(car, brand_km, irc, is_yellow=is_yellow)
 
-    records = _fetch_sales_records(car)
+    brand_obj = getattr(brand_km, 'brand', None) if brand_km else None
+    if analysis_days is None:
+        analysis_days = get_analysis_days_for_car(car, brand=brand_obj)
+
+    records = _fetch_sales_records(car, days=analysis_days)
     model_mod_ids = _model_modification_ids(car)
     complectation_id = (
         car.complectation_autoru.idSite
@@ -306,12 +343,12 @@ def calculate_target_cum(
     )
 
     if not analogs:
-        return _brand_monthly_fallback(car, brand_km, irc)
+        return _brand_monthly_fallback(car, brand_km, irc, is_yellow=is_yellow)
 
     margin_pcts = [a['margin_pct'] for a in analogs]
     trimmed = _trim_outliers(margin_pcts)
     if trimmed is None:
-        return _brand_monthly_fallback(car, brand_km, irc)
+        return _brand_monthly_fallback(car, brand_km, irc, is_yellow=is_yellow)
 
     median_margin_pct = _median(trimmed)
 
@@ -324,17 +361,25 @@ def calculate_target_cum(
     else:
         liquidity_ratio = 1.0
 
-    liquidity_multiplier, liquidity_label = _liquidity_multiplier(liquidity_ratio)
+    # Если машина желтая — сразу применяется «Глубокий сток (максимальное снижение порога)»
+    if is_yellow:
+        liquidity_multiplier = 0.63
+        liquidity_label = 'Глубокий сток (максимальное снижение порога)'
+    else:
+        liquidity_multiplier, liquidity_label = _liquidity_multiplier(liquidity_ratio)
+
     adjusted_margin_pct = median_margin_pct * liquidity_multiplier * tactic_mult
     km_value = car_cost * adjusted_margin_pct / 100
 
     mark_name = car.modification_autoru.model.mark.name
     model_name = car.modification_autoru.model.name
     tactic_desc = f', {tactic_label}' if tactic_label else ''
+    days_desc = f' за {analysis_days} дн.'
+    yellow_desc = ', жёлтый АМ' if is_yellow else ''
     description = (
-        f'АвтоК: {mark_name} {model_name}, аналоги {search_label} '
+        f'АвтоК: {mark_name} {model_name}, аналоги {search_label}{days_desc} '
         f'({len(trimmed)} сделок), медиана {median_margin_pct:.2f}%, '
-        f'ликвидность {liquidity_label} (×{liquidity_multiplier:.2f}){tactic_desc}'
+        f'ликвидность {liquidity_label} (×{liquidity_multiplier:.2f}){yellow_desc}{tactic_desc}'
     )
 
     return {
@@ -350,7 +395,9 @@ def calculate_target_cum(
         'tactic_label': tactic_label,
         'analog_count': len(trimmed),
         'search_label': search_label,
+        'analysis_days': analysis_days,
         'days_in_stock': days_in_stock,
         'avg_sale_days': round(avg_sale_days, 1) if avg_sale_days is not None else None,
         'car_cost': car_cost,
+        'is_yellow': is_yellow,
     }

@@ -26,6 +26,35 @@
 
         <div class="portal-panel mb-4">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h5 class="mb-0">Параметры алгоритма АвтоК</h5>
+            </div>
+            <form method="post" action="{% url 'prices_car:settings' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_algorithm_settings">
+                <input type="hidden" name="return_month" value="{{ params.filter_month }}">
+                <div class="row align-items-end g-3">
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Период анализа статистики продаж по умолчанию</label>
+                        <div class="input-group">
+                            <input type="number" name="analysis_period_days" class="form-control" min="7" max="730" required value="{{ params.algorithm_settings.analysis_period_days }}">
+                            <span class="input-group-text">дней</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                    <div class="col-12">
+                        <p class="small text-muted mb-0">
+                            Глубина выборки розничных продаж аналогов для расчёта медианной кумулятивной маржи и срока выбытия в формуле «АвтоК».
+                            Для конкретных брендов период можно индивидуально переопределить в разделе <a href="{% url 'prices_car:brands' %}">Бренды</a>.
+                        </p>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="portal-panel mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h5 class="mb-0">Внести КМ по всем брендам</h5>
                 <button type="button" class="btn-calculate-sm text-white" data-bs-toggle="modal" data-bs-target="#modalBrandKm" id="btn-open-brand-km">
                     <span class="icon-mbri-plus"></span> Добавить

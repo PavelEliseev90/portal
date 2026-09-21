@@ -36,6 +36,12 @@ class PriceCarBrand(models.Model):
         default=90,
         help_text='Срок бесплатного хранения/консигнации от импортера (в днях)',
     )
+    analysis_period_days = models.PositiveIntegerField(
+        'Период анализа статистики продаж (дней)',
+        null=True,
+        blank=True,
+        help_text='Глубина выборки сделок аналогов для АвтоК в днях (если не задано — берётся общее значение)',
+    )
 
     class Meta:
         db_table = 'prices_car_brand'
@@ -884,5 +890,39 @@ class KMCar(models.Model):
         db_table = 'km_car'
         verbose_name = "Расчетный км для автомобиля"
         verbose_name_plural = "Расчетные км для автомобилей"
+
+
+class PriceCarAlgorithmSettings(models.Model):
+    """Глобальные параметры алгоритма ценообразования и расчёта АвтоК."""
+    analysis_period_days = models.PositiveIntegerField(
+        'Период анализа статистики продаж по умолчанию (дней)',
+        default=60,
+        help_text='Глубина выборки розничных продаж аналогов (в днях) для алгоритма АвтоК',
+    )
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        db_table = 'prices_car_algorithm_settings'
+        verbose_name = 'Настройки алгоритма ценообразования'
+        verbose_name_plural = 'Настройки алгоритма ценообразования'
+
+    def __str__(self):
+        return f'Настройки алгоритма (анализ: {self.analysis_period_days} дн.)'
+
+    @classmethod
+    def get_settings(cls):
+        obj = cls.objects.first()
+        if not obj:
+            obj, _ = cls.objects.get_or_create(pk=1, defaults={'analysis_period_days': 60})
+        return obj
+
+    @classmethod
+    def get_default_analysis_days(cls) -> int:
+        try:
+            settings_obj = cls.get_settings()
+            return int(settings_obj.analysis_period_days or 60)
+        except Exception:
+            return 60
+
 
 

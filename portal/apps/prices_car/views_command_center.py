@@ -541,6 +541,7 @@ def api_simulate_deal(request):
         dop_margin = data.get('dop_margin', 0)
         work_margin = data.get('work_margin', 0)
         insurance_margin = data.get('insurance_margin', 0)
+        analysis_days = data.get('analysis_days')
 
         result = simulate_deal_calculation(
             car_id=car_id,
@@ -558,6 +559,7 @@ def api_simulate_deal(request):
             dop_margin=dop_margin,
             work_margin=work_margin,
             insurance_margin=insurance_margin,
+            analysis_days_override=int(analysis_days) if analysis_days else None,
         )
         return JsonResponse(result)
     except Exception as ex:

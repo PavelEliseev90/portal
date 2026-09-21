@@ -101,6 +101,9 @@ def build_km_calculation_breakdown(
             'stage_price': None,
             'car_price': None,
             'with_trade_in': False,
+            'is_yellow': False,
+            'date_report_str': '',
+            'analysis_days': 60,
         }
 
     from prices_car.brand_resolve import resolve_price_car_brand_for_car
@@ -257,7 +260,8 @@ def build_km_calculation_breakdown(
             km_val = auto_k_block.get('km_min_automatic', 0)
             steps_local.append(_step('Сегмент сделок', title_suffix, source='Cumulative'))
             steps_local.append(_step('Себестоимость', _fmt_rub(auto_k_block.get('car_cost'))))
-            steps_local.append(_step('Период анализа', '60 дней'))
+            analysis_days = auto_k_block.get('analysis_days') or 60
+            steps_local.append(_step('Период анализа', f'{analysis_days} дней'))
             steps_local.append(_step('Сегмент поиска', auto_k_block.get('search_label') or '—'))
             steps_local.append(_step('Сделок после очистки', str(auto_k_block.get('analog_count') or 0)))
             if auto_k_block.get('median_margin_pct') is not None:
@@ -265,10 +269,11 @@ def build_km_calculation_breakdown(
             steps_local.append(_step('Дней на складе', str(auto_k_block.get('days_in_stock') or 0)))
             if auto_k_block.get('liquidity_ratio') is not None:
                 steps_local.append(_step('Коэфф. ликвидности', str(auto_k_block.get('liquidity_ratio'))))
-            steps_local.append(_step(
-                'Корректировка ликвидности',
-                auto_k_block.get('liquidity_label') or '—',
-            ))
+            lbl = auto_k_block.get('liquidity_label') or '—'
+            mult = auto_k_block.get('liquidity_multiplier')
+            if mult is not None:
+                lbl = f'{lbl} (×{mult})'
+            steps_local.append(_step('Корректировка ликвидности', lbl))
             steps_local.append(_step('Итого мин. КМ', _fmt_rub(km_val), highlight=True))
             desc_local = auto_k_block.get('km_description', '')
             if auto_k_block.get('fallback'):
@@ -350,6 +355,10 @@ def build_km_calculation_breakdown(
     methods.sort(key=lambda m: order.get(m['id'], 99))
 
     brand_km_info = None
+    if not brand_km_obj and brand_car:
+        from prices_car.models import BrandKM
+        brand_km_obj = BrandKM.objects.filter(brand=brand_car).order_by('month').last()
+
     if brand_km_obj:
         brand_km_info = {
             'brand': str(brand_km_obj.brand),
@@ -359,6 +368,12 @@ def build_km_calculation_breakdown(
             'km_display': _fmt_rub(brand_km_obj.km),
             'km_min_dc_display': _fmt_rub(brand_km_obj.km_min_dc),
         }
+
+    from avtosalon.deal_calc_approval_report import is_yellow_car_at_date
+    is_yellow, date_report_str = is_yellow_car_at_date(car, getattr(calc, 'date', None))
+
+    from prices_car.target_cum import get_analysis_days_for_car
+    analysis_days = get_analysis_days_for_car(car, brand=brand_car)
 
     winner_label = TYPE_KM_LABELS.get(type_km, '')
     if type_km == 5 and with_trade_in:
@@ -382,4 +397,7 @@ def build_km_calculation_breakdown(
         'stage_price': str(car.stage_price) if car.stage_price else None,
         'car_price': _fmt_rub(price),
         'car_price_raw': price,
+        'is_yellow': is_yellow,
+        'date_report_str': date_report_str,
+        'analysis_days': analysis_days,
     }
