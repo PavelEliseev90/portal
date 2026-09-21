@@ -108,6 +108,70 @@ def url_replace(context, **kwargs):
 
 
 @register.simple_tag(takes_context=True)
+def query_transform(context, *args, **kwargs):
+    """
+    Формирует URL-encoded строку GET-параметров, объединяя базовые параметры и kwargs.
+    Поддерживает:
+      - {% query_transform params.filtr soglasovanie='auto_approved' page=1 %}
+      - {% query_transform key=val %} (берёт request.GET из контекста)
+    Пустые значения в kwargs (None, '') удаляют параметр из строки запроса.
+    """
+    params_dict = {}
+
+    # 1. Извлекаем базовые параметры
+    if args and args[0] is not None:
+        source = args[0]
+        if hasattr(source, 'GET'):
+            source = source.GET
+        if hasattr(source, 'lists'):  # QueryDict
+            for k, vals in source.lists():
+                params_dict[k] = list(vals)
+        elif isinstance(source, dict):
+            for k, v in source.items():
+                if v is None or v == '' or v == []:
+                    continue
+                if k == 'filter_unit':
+                    params_dict['unit_ids'] = [str(x) for x in v] if isinstance(v, (list, tuple)) else [str(v)]
+                elif isinstance(v, (list, tuple)):
+                    params_dict[k] = [str(x) for x in v]
+                elif isinstance(v, bool):
+                    if v:
+                        params_dict[k] = ['1']
+                else:
+                    params_dict[k] = [str(v)]
+    else:
+        req = context.get('request')
+        if req and hasattr(req, 'GET'):
+            for k, vals in req.GET.lists():
+                params_dict[k] = list(vals)
+
+    # 2. Переопределяем / дополняем / удаляем параметры из kwargs
+    for k, v in kwargs.items():
+        if v is None or v == '':
+            params_dict.pop(k, None)
+            if k == 'unit_ids':
+                params_dict.pop('filter_unit', None)
+        else:
+            if isinstance(v, (list, tuple)):
+                params_dict[k] = [str(x) for x in v]
+            elif isinstance(v, bool):
+                if v:
+                    params_dict[k] = ['1']
+                else:
+                    params_dict.pop(k, None)
+            else:
+                params_dict[k] = [str(v)]
+
+    # 3. Собираем пары (key, value) и кодируем
+    pairs = []
+    for k, v_list in params_dict.items():
+        for val in v_list:
+            pairs.append((k, val))
+
+    return urlencode(pairs)
+
+
+@register.simple_tag(takes_context=True)
 def razdelit(context, **kwargs):
     num = 0
     num1 = kwargs['num_1'] 
