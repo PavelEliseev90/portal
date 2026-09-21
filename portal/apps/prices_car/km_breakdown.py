@@ -350,8 +350,41 @@ def build_km_calculation_breakdown(
         reason='' if type_km == 3 else 'Не задан или не выбран',
     ))
 
-    # Порядок отображения: ручной → спец → АвтоК → план → справочные
-    order = {3: 0, 4: 1, 5: 2, 51: 3, 1: 4, 101: 5, 102: 6}
+    # --- Вариант 6 (Smart АвтоК) — Справочно ---
+    auto6 = cumulative.get('automatic_6')
+    if auto6 or show_reference_methods:
+        steps6 = []
+        km6_val = None
+        desc6 = ''
+        if auto6:
+            km6_val = auto6.get('km_min_automatic', 0)
+            km_base_6 = auto6.get('km_base', 0)
+            disc_pct_6 = auto6.get('discount_percent', 0.0)
+            disc_rub_6 = auto6.get('discount_rub', 0)
+            disc_id = auto6.get('discount_id')
+
+            steps6.append(_step('Базовый КМ (АвтоК)', _fmt_rub(km_base_6), source='target_cum'))
+            if disc_pct_6:
+                steps6.append(_step('Дисконт % правила ДЦ', _fmt_pct(disc_pct_6)))
+            if disc_rub_6:
+                steps6.append(_step('Дисконт в рублях', f'-{_fmt_rub(disc_rub_6)}'))
+            if disc_id:
+                steps6.append(_step('ID правила дисконта', f'#{disc_id}', source='PriceCarKmDiscount'))
+            steps6.append(_step('Итого Вариант 6 (Smart АвтоК)', _fmt_rub(km6_val), highlight=True))
+            desc6 = auto6.get('km_description', '')
+        else:
+            steps6.append(_step('Вариант 6 (Smart АвтоК)', 'не применён'))
+            desc6 = 'Индивидуальные правила дисконта ДЦ не найдены или база АвтоК равна 0.'
+
+        methods.append(_method_block(
+            6, 'Вариант 6: Smart АвтоК (справочно)', km6_val, steps6, desc6,
+            applicable=False,
+            reason='Справочный метод: в цепочку приоритетов согласования не входит',
+            reference_only=True,
+        ))
+
+    # Порядок отображения: ручной → спец → АвтоК → план → справочные (Вариант 6, Авто, Авто+)
+    order = {3: 0, 4: 1, 5: 2, 51: 3, 1: 4, 6: 5, 101: 6, 102: 7}
     methods.sort(key=lambda m: order.get(m['id'], 99))
 
     brand_km_info = None

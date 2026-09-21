@@ -27,16 +27,12 @@ def resolve_km_priority(
 ):
     """
     Итог КМ и type_km:
-    ручной > Вариант 6 (Smart АвтоК) > спец. условие > АвтоК (с/без trade-in) > план на месяц.
-    Авто+ (km_auto_2) в цепочку не входит — только справочно.
+    ручной > спец. условие > АвтоК (с/без trade-in) > план на месяц.
+    Авто+ (km_auto_2) и Вариант 6 (km_auto_6, Smart АвтоК) в цепочку выбора итога не входят — только справочно.
     """
     manual = int(km_manual or 0)
     if manual > 0:
         return manual, 3
-
-    auto6 = int(km_auto_6 or 0)
-    if auto6 > 0:
-        return auto6, 6
 
     auto3 = int(km_auto_3 or 0)
     if auto3 > 0:
