@@ -77,6 +77,9 @@ def filtered_shipments_qs(filters: dict[str, Any]):
 DETAIL_VALUES = (
     'id', 'nomer', 'dataTime', 'unit_id', 'unit__name', 'cars__vin', 'cars__mark',
     'cars__model', 'cars__year', 'clientName', 'client__name', 'client__full_name',
+    'cars__modification', 'cars__modification_autoru__name', 'cars__complectation_autoru__name',
+    'lo__modification_autoru__name', 'agreement__lo__modification_autoru__name',
+    'lo__complectation_autoru__name', 'agreement__lo__complectation_autoru__name',
     'staff_id', 'staff__name', 'typeSale',
     'amount', 'cost_price', 'outlay', 'agreement_id', 'agreement__nomer',
     'agreement__cm_actual', 'agreement__cm_est',
@@ -104,7 +107,7 @@ DETAIL_VALUES = (
 def _first_text(*vals):
     for v in vals:
         if v not in (None, ''):
-            return v
+            return str(v).strip()
     return ''
 
 
@@ -135,6 +138,17 @@ def _shipment_row_from_values(row: dict) -> dict[str, Any]:
         row.get('agreement__lo__rlk__reginteractivocenka__iznos'),
         row.get('rlk__reginteractivocenka__iznos'),
     )
+    modification = _first_text(
+        row.get('cars__modification'),
+        row.get('cars__modification_autoru__name'),
+        row.get('lo__modification_autoru__name'),
+        row.get('agreement__lo__modification_autoru__name'),
+    )
+    complectation = _first_text(
+        row.get('cars__complectation_autoru__name'),
+        row.get('lo__complectation_autoru__name'),
+        row.get('agreement__lo__complectation_autoru__name'),
+    )
     return {
         'id': row['id'],
         'nomer': row.get('nomer') or '',
@@ -144,6 +158,8 @@ def _shipment_row_from_values(row: dict) -> dict[str, Any]:
         'vin': row.get('cars__vin') or '',
         'mark': row.get('cars__mark') or '',
         'model': row.get('cars__model') or '',
+        'modification': modification,
+        'complectation': complectation,
         'year': row.get('cars__year') or '',
         'client': _first_text(
             row.get('client__name'),

@@ -85,6 +85,8 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
     outlay = money(row.get('outlay'))
     iznos = row.get('lo__rlk__reginteractivocenka__iznos')
     reception_date = row.get('lo__dataTime') or row.get('lo_link_date')
+    modification = (row.get('modification') or row.get('modification_autoru__name') or '').strip()
+    complectation = (row.get('complectation_autoru__name') or row.get('complectation_avito__name') or '').strip()
     return {
         'id': row['id'],
         'slug': row.get('slug') or '',
@@ -92,6 +94,8 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
         'reception_date': reception_date,
         'mark': row.get('mark') or '',
         'model': row.get('model') or '',
+        'modification': modification,
+        'complectation': complectation,
         'year': row.get('year') or 0,
         'run': row.get('run') or 0,
         'unit_id': row.get('unit_id'),
@@ -133,7 +137,9 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
 
 
 DETAIL_VALUES = (
-    'id', 'slug', 'vin', 'mark', 'model', 'year', 'run', 'unit_id', 'unit__name',
+    'id', 'slug', 'vin', 'mark', 'model', 'modification',
+    'modification_autoru__name', 'complectation_autoru__name', 'complectation_avito__name',
+    'year', 'run', 'unit_id', 'unit__name',
     'store__name', 'status__name', 'type_reception__name', 'type_sale__name',
     'stage_price__name', 'group_price__name',
     'lo__staff_id', 'lo__staff__name',
