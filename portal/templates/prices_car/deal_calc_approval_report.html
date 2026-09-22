@@ -284,6 +284,7 @@
             <th>Тип продажи</th>
             <th class="text-center" title="Автомобиль отчитан перед импортёром на момент КП (дата рапорта заполнена)">Жёлтый АМ</th>
             <th class="num" title="Норматив кумулятивной маржи бренда на месяц (BrandKM)">КМ на месяц</th>
+            <th class="num" title="Расчетный КМ в коммерческом предложении">КП</th>
             <th class="num">КВП</th>
             <th class="num" title="Снимок формулы на момент согласования">Итог по формуле</th>
             <th>Статус согласования</th>
@@ -332,6 +333,9 @@
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}
+            </td>
+            <td class="num text-nowrap">
+              {% if row.km_raschet is not None %}{{ row.km_raschet|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
             </td>
             <td class="num text-nowrap fw-semibold">
               {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
@@ -404,7 +408,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="16" class="text-center text-muted py-5">
+            <td colspan="17" class="text-center text-muted py-5">
               <i class="bi bi-inbox text-muted" style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem;"></i>
               <div class="fw-semibold">Коммерческих предложений не найдено</div>
               <div class="small text-muted mt-1">
@@ -422,6 +426,7 @@
         <tfoot>
           <tr class="row-total">
             <td colspan="9">Итого на странице · {{ params.rows|length }} КП (всего по фильтру: {{ params.total_count }})</td>
+            <td class="num">{{ params.page_kp_sum|floatformat:"0g" }}&nbsp;₽</td>
             <td class="num">{{ params.page_kvp_sum|floatformat:"0g" }}&nbsp;₽</td>
             <td class="num">{{ params.page_km_sum|floatformat:"0g" }}&nbsp;₽</td>
             <td colspan="5"></td>

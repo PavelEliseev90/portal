@@ -214,6 +214,7 @@ def deal_calc_approval_report(request):
     if export_qs:
         export_url = '{}?{}'.format(export_url, export_qs)
 
+    page_kp_sum = sum(r.get('km_raschet') or 0 for r in rows)
     page_kvp_sum = sum(r.get('kvp') or 0 for r in rows)
     page_km_sum = sum(r.get('km_formula') or 0 for r in rows)
 
@@ -233,6 +234,7 @@ def deal_calc_approval_report(request):
             'desktop_url': reverse('prices_car:new_cars_director_desktop') + uid_suffix,
             'export_url': export_url,
             'total_count': paginator.count,
+            'page_kp_sum': page_kp_sum,
             'page_kvp_sum': page_kvp_sum,
             'page_km_sum': page_km_sum,
         },
