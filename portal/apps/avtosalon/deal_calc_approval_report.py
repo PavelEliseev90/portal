@@ -3,7 +3,7 @@ from datetime import date
 from calendar import monthrange
 from urllib.parse import urlencode
 
-from django.db.models import OuterRef, Subquery, Q
+from django.db.models import OuterRef, Subquery, Q, Sum
 from django.urls import reverse
 from django.utils import timezone
 
