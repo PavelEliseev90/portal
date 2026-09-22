@@ -160,7 +160,7 @@ def report_columns_save(request):
         return JsonResponse({'error': 'Некорректный JSON'}, status=400)
 
     report_key = (payload.get('report_key') or '').strip()
-    if report_key not in REPORTS:
+    if report_key not in REPORTS and report_key != 'deal_calc_approval':
         return JsonResponse({'error': 'Неизвестный отчёт'}, status=400)
 
     columns = payload.get('columns')

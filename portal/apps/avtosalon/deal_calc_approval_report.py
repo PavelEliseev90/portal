@@ -272,7 +272,10 @@ def build_approval_report_queryset(request):
         'soglasovanie': soglasovanie,
         'type_sale': type_sale,
     }
-    return qs.order_by('-date', '-pk'), filtr
+    from asp.report_table import resolve_order_by
+    order_ui, orm_order = resolve_order_by('deal_calc_approval', request.GET.get('order_by'))
+    filtr['order_by'] = order_ui
+    return qs.order_by(*orm_order), filtr
 
 
 def build_approval_report_querystring(filtr, *, page=None):
@@ -291,6 +294,8 @@ def build_approval_report_querystring(filtr, *, page=None):
         params.append(('only_shipped', '1'))
     if filtr.get('type_sale'):
         params.append(('type_sale', str(filtr['type_sale'])))
+    if filtr.get('order_by'):
+        params.append(('order_by', filtr['order_by']))
     if page:
         params.append(('page', str(page)))
     return urlencode(params)
@@ -423,7 +428,7 @@ def is_yellow_car_at_date(car, calc_date=None):
     return True, date_report_str
 
 
-def serialize_approval_report_row(calc, brand_resolver=None):
+def serialize_approval_report_row(calc, brand_resolver=None, details_map=None):
     car = calc.car
     unit = calc.unit
     city = getattr(unit, 'city', None) if unit else None
@@ -451,8 +456,9 @@ def serialize_approval_report_row(calc, brand_resolver=None):
 
     type_sale_name = getattr(calc, 'shipment_type_sale', None) or (calc.car.type_sale.name if calc.car and getattr(calc.car, 'type_sale', None) else '') or '—'
 
-    return {
+    row = {
         'pk': calc.pk,
+        'id': calc.pk,
         'url': reverse('avtosalon:deal_calculation_doc', kwargs={'id': calc.pk}),
         'unit_name': unit.name if unit else '—',
         'city_name': city.name if city else '—',
@@ -486,77 +492,119 @@ def serialize_approval_report_row(calc, brand_resolver=None):
         'shipped': shipped,
         'shipment_nomer': getattr(calc, 'shipment_nomer', None) or '',
         'sale_profit': sale_profit,
+        # Поля коммерческого предложения
+        'calc_discount': calc.discount,
+        'calc_custom_opfu': calc.custom_opfu,
+        'calc_custom_tradein': calc.custom_tradein,
+        'calc_custom_wheels': calc.custom_wheels,
+        'calc_custom_grz': calc.custom_grz,
+        'calc_custom_work': calc.custom_work,
+        'calc_custom_product': calc.custom_product,
     }
 
+    # Детали коммерческого предложения (CarCalculationsDetail)
+    calc_details = None
+    if details_map is not None:
+        calc_details = details_map.get(calc.pk)
+    if calc_details:
+        for d in calc_details:
+            dt_id = getattr(d, 'detail_type_id', None)
+            if dt_id:
+                row[f'detail_{dt_id}'] = {
+                    'vp': d.vp,
+                    'amount': d.amount,
+                    'success': d.success,
+                    'pocazatel': d.pocazatel,
+                    'amount_k': d.amount_k,
+                }
+    return row
 
-def build_approval_report_excel(rows):
+
+def build_approval_report_excel(rows, visible_columns=None):
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
-    headers = [
-        'Подразделение',
-        'Город',
-        'Марка',
-        'Модель',
-        'Комплектация',
-        'Год',
-        'VIN',
-        'Тип продажи',
-        'Жёлтый АМ',
-        'КМ на месяц',
-        'КП',
-        'КВП',
-        'Итог по формуле',
-        'Статус согласования',
-        'Автосогласование',
-        'Согласовал директор',
-        'Согласовал УК',
-        'Доходность уехала',
-        'Номер РЛ',
-        'Номер КП',
-        'Номер отгрузки',
-        'Дата КП',
-        'Ссылка КП',
-    ]
     wb = Workbook()
     ws = wb.active
     ws.title = 'Согласование КП'
-    ws.append(headers)
 
     header_fill = PatternFill(start_color='002A5A', end_color='002A5A', fill_type='solid')
     header_font = Font(bold=True, color='FFFFFF')
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
 
-    for row in rows:
-        ws.append([
-            row['unit_name'],
-            row['city_name'],
-            row['mark'],
-            row['model'],
-            row['complectation'],
-            row['year'],
-            row['vin'],
-            row.get('type_sale', '—'),
-            'Да' if row.get('is_yellow') else 'Нет',
-            row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
-            row['km_raschet'] if row.get('km_raschet') is not None else '',
-            row['kvp'] if row['kvp'] is not None else '',
-            row['km_formula'] if row['km_formula'] is not None else '',
-            row['soglasovanie_label'],
-            'Да' if row.get('is_auto_approved') else 'Нет',
-            row['director_approver'] if row['director_approver'] != '—' else '',
-            row['uk_approver'] if row['uk_approver'] != '—' else '',
-            row['sale_profit'] if row['sale_profit'] is not None else '',
-            row['rlk_nomer'],
-            row['number'],
-            row['shipment_nomer'] or '',
-            row['date_str'],
-            row['url'],
-        ])
+    if visible_columns:
+        headers = [c['label_export'] for c in visible_columns]
+        ws.append(headers)
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        from asp.report_table import cell_export_value
+        for row in rows:
+            row_vals = []
+            for col in visible_columns:
+                val = cell_export_value('deal_calc_approval', row, col['key'])
+                row_vals.append(val if val is not None else '')
+            ws.append(row_vals)
+    else:
+        headers = [
+            'Подразделение',
+            'Город',
+            'Марка',
+            'Модель',
+            'Комплектация',
+            'Год',
+            'VIN',
+            'Тип продажи',
+            'Жёлтый АМ',
+            'КМ на месяц',
+            'КП',
+            'КВП',
+            'Итог по формуле',
+            'Статус согласования',
+            'Автосогласование',
+            'Согласовал директор',
+            'Согласовал УК',
+            'Доходность уехала',
+            'Номер РЛ',
+            'Номер КП',
+            'Номер отгрузки',
+            'Дата КП',
+            'Ссылка КП',
+        ]
+        ws.append(headers)
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        for row in rows:
+            ws.append([
+                row['unit_name'],
+                row['city_name'],
+                row['mark'],
+                row['model'],
+                row['complectation'],
+                row['year'],
+                row['vin'],
+                row.get('type_sale', '—'),
+                'Да' if row.get('is_yellow') else 'Нет',
+                row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
+                row['km_raschet'] if row.get('km_raschet') is not None else '',
+                row['kvp'] if row['kvp'] is not None else '',
+                row['km_formula'] if row['km_formula'] is not None else '',
+                row['soglasovanie_label'],
+                'Да' if row.get('is_auto_approved') else 'Нет',
+                row['director_approver'] if row['director_approver'] != '—' else '',
+                row['uk_approver'] if row['uk_approver'] != '—' else '',
+                row['sale_profit'] if row['sale_profit'] is not None else '',
+                row['rlk_nomer'],
+                row['number'],
+                row['shipment_nomer'] or '',
+                row['date_str'],
+                row['url'],
+            ])
 
     for col in range(1, len(headers) + 1):
         letter = get_column_letter(col)

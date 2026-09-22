@@ -12,7 +12,96 @@ COLUMNS_COOKIE_VERSION = {
     'margin': 'v6',
     'stock': 'v6',
     'accepted': 'v4',
+    'deal_calc_approval': 'v1',
 }
+
+# --- Согласование КП (новые автомобили) ---
+DEAL_CALC_APPROVAL_BASE_COLUMNS = [
+    'unit', 'mark', 'model', 'complectation', 'year', 'vin',
+    'type_sale', 'is_yellow', 'brand_km_month', 'km_raschet', 'kvp', 'km_formula',
+    'soglasovanie', 'director_approver', 'uk_approver', 'sale_profit', 'docs',
+]
+DEAL_CALC_APPROVAL_COLUMN_DEFS = {
+    'unit': {'label': 'Подразделение / город', 'sortable': True, 'sort_key': 'unit', 'num': False},
+    'mark': {'label': 'Марка', 'sortable': True, 'sort_key': 'mark', 'num': False},
+    'model': {'label': 'Модель', 'sortable': True, 'sort_key': 'model', 'num': False},
+    'complectation': {'label': 'Комплектация', 'sortable': True, 'sort_key': 'complectation', 'num': False},
+    'year': {'label': 'Год', 'sortable': True, 'sort_key': 'year', 'num': False},
+    'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
+    'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
+    'is_yellow': {'label': 'Жёлтый АМ', 'sortable': True, 'sort_key': 'is_yellow', 'num': False},
+    'brand_km_month': {'label': 'КМ на месяц', 'sortable': False, 'sort_key': 'brand_km_month', 'num': True},
+    'km_raschet': {'label': 'КП', 'sortable': True, 'sort_key': 'km_raschet', 'num': True},
+    'kvp': {'label': 'КВП', 'sortable': True, 'sort_key': 'kvp', 'num': True},
+    'km_formula': {'label': 'Итог по формуле', 'sortable': True, 'sort_key': 'km_formula', 'num': True},
+    'soglasovanie': {'label': 'Статус согласования', 'sortable': True, 'sort_key': 'soglasovanie', 'num': False},
+    'director_approver': {'label': 'Согласовал директор', 'sortable': True, 'sort_key': 'director_approver', 'num': False},
+    'uk_approver': {'label': 'Согласовал УК', 'sortable': True, 'sort_key': 'uk_approver', 'num': False},
+    'sale_profit': {'label': 'Доходность уехала', 'sortable': False, 'sort_key': 'sale_profit', 'num': True},
+    'docs': {'label': 'РЛ / КП / Отгрузка', 'sortable': True, 'sort_key': 'date', 'num': False},
+    'calc_discount': {'label': 'Скидка ДЦ (КП)', 'sortable': True, 'sort_key': 'calc_discount', 'num': True},
+    'calc_custom_opfu': {'label': 'ОПФУ (КП)', 'sortable': True, 'sort_key': 'calc_custom_opfu', 'num': True},
+    'calc_custom_tradein': {'label': 'Trade-in (КП)', 'sortable': True, 'sort_key': 'calc_custom_tradein', 'num': True},
+    'calc_custom_wheels': {'label': 'Шины (КП)', 'sortable': True, 'sort_key': 'calc_custom_wheels', 'num': True},
+    'calc_custom_grz': {'label': 'Гос. рег. (КП)', 'sortable': True, 'sort_key': 'calc_custom_grz', 'num': True},
+    'calc_custom_work': {'label': 'Работы (КП)', 'sortable': True, 'sort_key': 'calc_custom_work', 'num': True},
+    'calc_custom_product': {'label': 'Запчасти (КП)', 'sortable': True, 'sort_key': 'calc_custom_product', 'num': True},
+}
+DEAL_CALC_APPROVAL_SORT_FIELDS = {
+    'unit': 'unit__name',
+    'mark': 'car__mark',
+    'model': 'car__model',
+    'complectation': 'car__complectation_autoru__name',
+    'year': 'car__year',
+    'vin': 'car__vin',
+    'type_sale': 'car__type_sale__name',
+    'is_yellow': 'car__date_report',
+    'km_raschet': 'km_raschet',
+    'kvp': 'kvp',
+    'km_formula': 'km_raschet',
+    'soglasovanie': 'soglasovanie_status',
+    'director_approver': 'director_approve_user__first_name',
+    'uk_approver': 'uk_approve_user__first_name',
+    'date': 'date',
+    'calc_discount': 'discount',
+    'calc_custom_opfu': 'custom_opfu',
+    'calc_custom_tradein': 'custom_tradein',
+    'calc_custom_wheels': 'custom_wheels',
+    'calc_custom_grz': 'custom_grz',
+    'calc_custom_work': 'custom_work',
+    'calc_custom_product': 'custom_product',
+}
+
+
+def get_deal_calc_approval_config() -> dict[str, Any]:
+    defs = dict(DEAL_CALC_APPROVAL_COLUMN_DEFS)
+    defaults = list(DEAL_CALC_APPROVAL_BASE_COLUMNS)
+    try:
+        from prices_car.models import CarCalculationsTypeDetail
+        for dt in CarCalculationsTypeDetail.objects.exclude(name='').order_by('name'):
+            col_key = f'detail_{dt.id}'
+            defs[col_key] = {
+                'label': dt.name,
+                'label_export': dt.name,
+                'sortable': False,
+                'num': True,
+                'is_detail': True,
+                'detail_type_id': dt.id,
+            }
+    except Exception:
+        pass
+    return {
+        'defs': defs,
+        'defaults': defaults,
+        'sort': DEAL_CALC_APPROVAL_SORT_FIELDS,
+        'default_order': '-date',
+    }
+
+
+def get_report_config(report_key: str) -> dict[str, Any]:
+    if report_key == 'deal_calc_approval':
+        return get_deal_calc_approval_config()
+    return REPORTS[report_key]
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
@@ -238,7 +327,7 @@ def cookie_name(report_key: str) -> str:
 
 
 def normalize_columns(report_key: str, raw_columns) -> list[str]:
-    cfg = REPORTS[report_key]
+    cfg = get_report_config(report_key)
     defaults = list(cfg['defaults'])
     valid = set(cfg['defs'].keys())
     if not raw_columns:
@@ -255,7 +344,7 @@ def normalize_columns(report_key: str, raw_columns) -> list[str]:
 def parse_columns_cookie(raw: str | None, report_key: str) -> list[str]:
     text = (raw or '').strip()
     if not text:
-        return list(REPORTS[report_key]['defaults'])
+        return list(get_report_config(report_key)['defaults'])
     if text.startswith('['):
         try:
             data = json.loads(text)
@@ -275,7 +364,7 @@ def get_user_columns(request, report_key: str) -> list[str]:
 
 
 def build_columns_settings(report_key: str, visible_keys: list[str]) -> list[dict]:
-    defs = REPORTS[report_key]['defs']
+    defs = get_report_config(report_key)['defs']
     visible_set = set(visible_keys)
     ordered = list(visible_keys)
     for key in defs:
@@ -288,10 +377,12 @@ def build_columns_settings(report_key: str, visible_keys: list[str]) -> list[dic
 
 
 def build_table_columns(report_key: str, visible_keys: list[str]) -> list[dict]:
-    defs = REPORTS[report_key]['defs']
+    defs = get_report_config(report_key)['defs']
     columns = []
     for key in visible_keys:
-        defn = defs[key]
+        defn = defs.get(key)
+        if not defn:
+            continue
         columns.append({
             'key': key,
             'label': defn['label'],
@@ -306,7 +397,7 @@ def build_table_columns(report_key: str, visible_keys: list[str]) -> list[dict]:
 
 def resolve_order_by(report_key: str, order_by: str | None) -> tuple[str, tuple[str, ...]]:
     """Возвращает (order_by для UI, кортеж ORM order_by)."""
-    cfg = REPORTS[report_key]
+    cfg = get_report_config(report_key)
     raw = (order_by or cfg['default_order']).strip() or cfg['default_order']
     descending = raw.startswith('-')
     key = raw[1:] if descending else raw
@@ -325,8 +416,9 @@ def resolve_order_by(report_key: str, order_by: str | None) -> tuple[str, tuple[
 
 
 def attach_table_ui(report: dict[str, Any], request, report_key: str) -> dict[str, Any]:
+    cfg = get_report_config(report_key)
     visible = get_user_columns(request, report_key)
-    order_ui = report.get('filters', {}).get('order_by') or REPORTS[report_key]['default_order']
+    order_ui = report.get('filters', {}).get('order_by') or cfg['default_order']
     # Нормализуем order_by в filters для шаблона стрелок
     order_ui, _orm = resolve_order_by(report_key, order_ui)
     if isinstance(report.get('filters'), dict):
@@ -334,7 +426,7 @@ def attach_table_ui(report: dict[str, Any], request, report_key: str) -> dict[st
     report['report_key'] = report_key
     report['table_columns'] = build_table_columns(report_key, visible)
     report['columns_settings'] = build_columns_settings(report_key, visible)
-    report['columns_defaults'] = list(REPORTS[report_key]['defaults'])
+    report['columns_defaults'] = list(cfg['defaults'])
     report['columns_defaults_json'] = json.dumps(report['columns_defaults'])
     report['table_columns_json'] = json.dumps([
         {'key': c['key'], 'num': c['num'], 'signed': c['signed']}
@@ -436,6 +528,39 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'kolesa2_reception': 'Да' if row.get('kolesa2_reception') else 'Нет',
         }
         return mapping.get(key, '')
+    if report_key == 'deal_calc_approval':
+        if key.startswith('detail_'):
+            detail = row.get(key)
+            if isinstance(detail, dict):
+                return detail.get('amount') if detail.get('amount') is not None else ''
+            return detail if detail is not None else ''
+        mapping = {
+            'unit': row.get('unit_label') or row.get('unit_name'),
+            'mark': row.get('mark'),
+            'model': row.get('model'),
+            'complectation': row.get('complectation'),
+            'year': row.get('year'),
+            'vin': row.get('vin'),
+            'type_sale': row.get('type_sale'),
+            'is_yellow': 'Да' if row.get('is_yellow') else 'Нет',
+            'brand_km_month': row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
+            'km_raschet': row.get('km_raschet') if row.get('km_raschet') is not None else '',
+            'kvp': row.get('kvp') if row.get('kvp') is not None else '',
+            'km_formula': row.get('km_formula') if row.get('km_formula') is not None else '',
+            'soglasovanie': row.get('soglasovanie_label') or '',
+            'director_approver': row.get('director_approver') if row.get('director_approver') != '—' else '',
+            'uk_approver': row.get('uk_approver') if row.get('uk_approver') != '—' else '',
+            'sale_profit': row.get('sale_profit') if row.get('sale_profit') is not None else '',
+            'docs': f"РЛ: {row.get('rlk_nomer') or ''}, КП: {row.get('number') or ''}".strip(),
+            'calc_discount': row.get('calc_discount') if row.get('calc_discount') is not None else '',
+            'calc_custom_opfu': row.get('calc_custom_opfu') if row.get('calc_custom_opfu') is not None else '',
+            'calc_custom_tradein': row.get('calc_custom_tradein') if row.get('calc_custom_tradein') is not None else '',
+            'calc_custom_wheels': row.get('calc_custom_wheels') if row.get('calc_custom_wheels') is not None else '',
+            'calc_custom_grz': row.get('calc_custom_grz') if row.get('calc_custom_grz') is not None else '',
+            'calc_custom_work': row.get('calc_custom_work') if row.get('calc_custom_work') is not None else '',
+            'calc_custom_product': row.get('calc_custom_product') if row.get('calc_custom_product') is not None else '',
+        }
+        return mapping.get(key, row.get(key, ''))
     # accepted
     mapping = {
         'date': row.get('date'),

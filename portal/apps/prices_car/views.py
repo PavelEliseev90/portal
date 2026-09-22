@@ -174,6 +174,8 @@ def new_cars_director_desktop_list(request, section):
 @login_required
 def deal_calc_approval_report(request):
     """Отчёт по согласованию КП — только для УК (последнее КП по рабочему листу)."""
+    from collections import defaultdict
+    from asp.report_table import attach_table_ui
     from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
     from avtosalon.deal_calc_approval_report import (
         BrandKMResolver,
@@ -185,6 +187,7 @@ def deal_calc_approval_report(request):
         resolve_desktop_user,
         desktop_user_query_suffix,
     )
+    from prices_car.models import CarCalculationsDetail
 
     if not user_has_deal_calc_uk_access(request.user):
         return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
@@ -206,8 +209,22 @@ def deal_calc_approval_report(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
+    # Загружаем детали калькуляций на странице без N+1 запросов
+    calc_ids = [item.pk for item in page_obj]
+    details_map = defaultdict(list)
+    if calc_ids:
+        for detail in (
+            CarCalculationsDetail.objects
+            .filter(calculation_id__in=calc_ids)
+            .select_related('detail_type')
+        ):
+            details_map[detail.calculation_id].append(detail)
+
     brand_resolver = BrandKMResolver()
-    rows = [serialize_approval_report_row(item, brand_resolver=brand_resolver) for item in page_obj]
+    rows = [
+        serialize_approval_report_row(item, brand_resolver=brand_resolver, details_map=details_map)
+        for item in page_obj
+    ]
     uid_suffix = desktop_user_query_suffix(view_user, request.user)
     export_qs = ctx['querystring']
     export_url = reverse('prices_car:deal_calc_approval_report_export')
@@ -218,32 +235,38 @@ def deal_calc_approval_report(request):
     page_kvp_sum = sum(r.get('kvp') or 0 for r in rows)
     page_km_sum = sum(r.get('km_formula') or 0 for r in rows)
 
+    params = {
+        'type': 'deal_calc_approval_report',
+        'report_title': 'Отчёт по согласованию КП',
+        'report_subtitle': 'Мониторинг согласования коммерческих предложений новых автомобилей',
+        'filtr': ctx['filtr'],
+        'filters': ctx['filtr'],
+        'units': ctx['units'],
+        'type_sales': ctx['type_sales'],
+        'metrics': ctx.get('metrics', {}),
+        'rows': rows,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'querystring': ctx['querystring'],
+        'desktop_url': reverse('prices_car:new_cars_director_desktop') + uid_suffix,
+        'export_url': export_url,
+        'total_count': paginator.count,
+        'page_kp_sum': page_kp_sum,
+        'page_kvp_sum': page_kvp_sum,
+        'page_km_sum': page_km_sum,
+    }
+    attach_table_ui(params, request, 'deal_calc_approval')
+
     return render(request, 'prices_car/deal_calc_approval_report.html', {
-        'params': {
-            'type': 'deal_calc_approval_report',
-            'report_title': 'Отчёт по согласованию КП',
-            'report_subtitle': 'Мониторинг согласования коммерческих предложений новых автомобилей',
-            'filtr': ctx['filtr'],
-            'units': ctx['units'],
-            'type_sales': ctx['type_sales'],
-            'metrics': ctx.get('metrics', {}),
-            'rows': rows,
-            'page_obj': page_obj,
-            'paginator': paginator,
-            'querystring': ctx['querystring'],
-            'desktop_url': reverse('prices_car:new_cars_director_desktop') + uid_suffix,
-            'export_url': export_url,
-            'total_count': paginator.count,
-            'page_kp_sum': page_kp_sum,
-            'page_kvp_sum': page_kvp_sum,
-            'page_km_sum': page_km_sum,
-        },
+        'params': params,
     })
 
 
 @login_required
 def deal_calc_approval_report_export(request):
-    """Excel-выгрузка отчёта по согласованию КП (те же фильтры, что на странице)."""
+    """Excel-выгрузка отчёта по согласованию КП с учётом выбранных колонок."""
+    from collections import defaultdict
+    from asp.report_table import get_user_columns, build_table_columns
     from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
     from avtosalon.deal_calc_approval_report import (
         BrandKMResolver,
@@ -252,6 +275,7 @@ def deal_calc_approval_report_export(request):
         serialize_approval_report_row,
     )
     from avtosalon.deal_calc_desktop import can_view_desktop_as, resolve_desktop_user
+    from prices_car.models import CarCalculationsDetail
 
     if not user_has_deal_calc_uk_access(request.user):
         return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
@@ -262,13 +286,28 @@ def deal_calc_approval_report_export(request):
     if not user_has_deal_calc_uk_access(view_user):
         return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
 
+    visible_keys = get_user_columns(request, 'deal_calc_approval')
+    visible_columns = build_table_columns('deal_calc_approval', visible_keys)
+    has_detail_cols = any(k.startswith('detail_') for k in visible_keys)
+
     ctx = build_approval_report_context(request)
+    items = list(ctx['queryset'])
+    details_map = defaultdict(list)
+    if has_detail_cols and items:
+        calc_ids = [item.pk for item in items]
+        for detail in (
+            CarCalculationsDetail.objects
+            .filter(calculation_id__in=calc_ids)
+            .select_related('detail_type')
+        ):
+            details_map[detail.calculation_id].append(detail)
+
     brand_resolver = BrandKMResolver()
     rows = [
-        serialize_approval_report_row(item, brand_resolver=brand_resolver)
-        for item in ctx['queryset'].iterator(chunk_size=300)
+        serialize_approval_report_row(item, brand_resolver=brand_resolver, details_map=details_map)
+        for item in items
     ]
-    wb = build_approval_report_excel(rows)
+    wb = build_approval_report_excel(rows, visible_columns=visible_columns)
     filename = 'kp_approval_report_%s.xlsx' % datetime.now().strftime('%Y%m%d_%H%M%S')
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
