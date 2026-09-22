@@ -1,307 +1,455 @@
 {% extends 'base_web.html' %}
+{% load custom_template_tags %}
 
-{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+{% block title %} — Подтверждение приезда на сервис по графику {% endblock %}
+{% block title_navbar %} — Подтверждение приезда на сервис по графику {% endblock %}
 
-{% block title %} - подтверждение приезда на сервис по графику {% endblock %}
-
-{% block title_navbar %} - подтверждение приезда на сервис по графику {% endblock %}
-    
 {% block content %}
+{% include 'asp/partials/asp_report_styles.html' %}
 
-<div class="row g-1 align-items-center">
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-      <label for="floatingInput">С</label>
-    </div>
-  </div>
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-      <label for="floatingInput">По</label>
-    </div>
-  </div>
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <select class="form-select" name = "unit_id" id = "unit_id" onChange="change_link()">
-        <option></option>
-        {% for unit in params.select.units %}
-          {% if params.filtr.unit_id|lower == unit.id|lower %}
-            <option id={{unit.id}} value="{{unit.id}}" selected>{{unit.name}} </option>
-          {% else %}
-            <option id={{unit.id}} value="{{unit.id}}"> {{unit.name}} </option>
-          {% endif %}
-        {% endfor %}
-      </select>
-      <label for="floatingInput">Подразделение</label>
-    </div>
-  </div>
-  
+<style>
+  /* Дополнительные стили для подтверждения записей в эстетике ASP */
+  .badge-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+  }
+  .badge-status-confirmed {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+  .badge-status-opened {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .badge-status-unread {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+  }
+  .kp-vin-cell {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    color: #475569;
+    white-space: nowrap;
+  }
+  .kp-quick-btn {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+  }
+  .conversion-stage-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.65rem;
+  }
+  .conversion-stage-card:last-child {
+    margin-bottom: 0;
+  }
+  .conversion-stage-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.35rem;
+  }
+  .conversion-stage-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #002a5a;
+  }
+</style>
 
-  <div class="col-sm-auto my-auto ">
-    <div class="form-floating mb-3">
-      <div class="d-grid gap-2 my-auto">
-        <button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Обновить </button>
+<div class="asp-rep" data-report-key="records_online_doc">
+  <!-- Шапка страницы и действия -->
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h2>Подтверждение приезда на сервис по графику</h2>
+      <p class="lead mb-0">Контроль подтверждения записи и запланированных визитов клиентов сервиса по графику</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <a href="/records_online_doc/" class="btn btn-outline-secondary btn-sm shadow-sm" title="Сбросить фильтры к значениям по умолчанию">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить фильтры
+      </a>
+      <a href="/online_doc/" class="btn btn-outline-primary btn-sm shadow-sm" title="Перейти к отчёту онлайн-записи">
+        <i class="bi bi-envelope-paper me-1"></i>Онлайн запись на сервис
+      </a>
+    </div>
+  </div>
+
+  <!-- Карточки KPI-метрик (в стиле ASP) -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric">
+        <div class="t"><i class="bi bi-calendar2-week text-primary me-1"></i>Записей по графику</div>
+        <div class="v">{{ params.count }}</div>
+        <div class="s">запланированных визитов</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric">
+        <div class="t text-info"><i class="bi bi-eye text-info me-1"></i>Открыли ссылку</div>
+        <div class="v">{{ params.count_opened }}</div>
+        <div class="s">{{ params.count_opened_percent }}% от всех записей</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric">
+        <div class="t text-success"><i class="bi bi-check-circle-fill text-success me-1"></i>Подтверждён приезд</div>
+        <div class="v">{{ params.count_confirmed }}</div>
+        <div class="s">{{ params.count_confirmed_percent }}% от общего числа</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric">
+        <div class="t text-warning"><i class="bi bi-funnel-fill text-warning me-1"></i>Конверсия открытия</div>
+        <div class="v">{{ params.count_opened_confirmed_percent }}%</div>
+        <div class="s">подтвердили из открывших</div>
       </div>
     </div>
   </div>
 
-</div>
+  <!-- Панель фильтров (в стиле ASP) -->
+  <div class="asp-rep-filter">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+      <div class="fw-bold" style="color: #002a5a; font-size: 0.92rem;">
+        <i class="bi bi-funnel-fill text-primary me-1"></i>Параметры фильтрации
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <span class="small text-muted me-1">Период:</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm kp-quick-btn" onclick="setQuickDate('current_month')">Текущий месяц</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm kp-quick-btn" onclick="setQuickDate('prev_month')">Прошлый месяц</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm kp-quick-btn" onclick="setQuickDate('last30')">30 дней</button>
+      </div>
+    </div>
 
-{% if params.count > 0 %}
+    <form method="get" class="row g-3 align-items-end" id="filterForm">
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label mb-1">Дата с</label>
+        <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{ params.filtr.date_start|date:'Y-m-d' }}">
+      </div>
 
-  <div class="table-responsive-sm">
-    <table class="table table-hover table-sm table-striped">
-    <thead class="table-white" style="font-size: 18px;">
-      <tr class="align-middle">
-        <th scope="col" class="align-middle text-success"><span class="icon-mbri-plus"></span></th>
-        <th scope="col" class="align-middle">Дата записи</th>
-        <th scope="col" class="align-middle">Дата открытия</th>
-        <th scope="col" class="align-middle">Подразделение</th>
-        <th scope="col" class="align-middle">Автомобиль</th>
-        <th scope="col" class="align-middle">Клиент</th>
-        <th scope="col" class="align-middle">Подтверждено</th>				
-      </tr>
-    </thead>
-    <tbody>
-    
-      {% if params.paginator.object_list %}
-        {% for object in params.paginator.object_list %}
-          <tr class="align-middle">
-            <td class="align-middle text-success">
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label mb-1">Дата по</label>
+        <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}">
+      </div>
+
+      <div class="col-sm-12 col-md-4">
+        <label class="form-label mb-1">Подразделение</label>
+        <select class="form-select form-select-sm" name="unit_id" id="unit_id">
+          <option value="">Все подразделения</option>
+          {% for unit in params.select.units %}
+            <option value="{{ unit.id }}" {% if params.filtr.unit_id|stringformat:'s' == unit.id|stringformat:'s' %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label mb-1">Показывать по</label>
+        <select class="form-select form-select-sm" id="select_count" name="select_count">
+          <option value="25" {% if params.select_count == 25 %}selected{% endif %}>25 записей</option>
+          <option value="50" {% if params.select_count == 50 %}selected{% endif %}>50 записей</option>
+          <option value="100" {% if params.select_count == 100 %}selected{% endif %}>100 записей</option>
+          <option value="200" {% if params.select_count == 200 %}selected{% endif %}>200 записей</option>
+        </select>
+      </div>
+
+      <div class="col-sm-6 col-md-2 text-md-end">
+        <button class="btn btn-primary btn-sm px-4 shadow-sm w-100" type="submit">
+          <i class="bi bi-check2 me-1"></i>Применить
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {% if params.count > 0 %}
+  <!-- Таблица записей (в стиле ASP) -->
+  <div class="asp-rep-panel no-padding mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-bottom bg-light bg-opacity-50">
+      <h3 class="mb-0" style="font-size: 0.98rem; font-weight: 600; color: #002a5a;">
+        Реестр подтверждения записей на сервис
+      </h3>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-light text-secondary border">
+          Всего в выборке: {{ params.count }}
+        </span>
+        {% if params.paginator.paginator.num_pages > 1 %}
+          <span class="badge bg-light text-muted border">
+            Стр. {{ params.paginator.number }} из {{ params.paginator.paginator.num_pages }}
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-hover table-striped table-asp mb-0">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 3.5rem;">Статус</th>
+            <th>Дата записи на сервис</th>
+            <th>Дата открытия ссылки</th>
+            <th>Подразделение</th>
+            <th>Автомобиль</th>
+            <th>Клиент</th>
+            <th class="text-center">Подтверждено</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for object in params.paginator.object_list %}
+          <tr>
+            <td class="text-center">
               {% if object.confirmed %}
-                <span class="icon-mbri-success"></span>
+                <span class="badge-status-pill badge-status-confirmed" title="Приезд подтверждён клиентом">
+                  <i class="bi bi-check-circle-fill"></i>Подтверждено
+                </span>
               {% elif object.dataTimeOpen != None %}
-                <span class="icon-mbri-alert"></span>
+                <span class="badge-status-pill badge-status-opened" title="Ссылка открыта клиентом, ожидает подтверждения">
+                  <i class="bi bi-eye-fill"></i>Открыто
+                </span>
               {% else %}
-                <span class="icon-mbri-close"></span>
-              {% endif %}
-
-            </td>
-            <td class="align-middle">{{object.dataTimeRecord}}</td>
-            <td class="align-middle">
-              {% if object.dataTimeOpen == None %}
-                ---
-              {% else %}
-                {{object.dataTimeOpen}}
+                <span class="badge-status-pill badge-status-unread" title="Ссылка пока не открывалась">
+                  <i class="bi bi-dash-circle"></i>Не открыто
+                </span>
               {% endif %}
             </td>
-            <td class="align-middle">{{object.unit.name}}</td>
-            <td class="align-middle">{{object.cars.vin}} / {{object.cars.mark}} {{object.cars.model}}</td> 
-            <td class="align-middle">{{object.clientName}}</td> 
-            <td class="align-middle"> 
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="flexCheckDisabled1" {% if object.confirmed %} checked {% endif %}  disabled>
-              </div>  
+            <td class="text-nowrap fw-semibold text-primary">
+              {{ object.dataTimeRecord|date:'d.m.Y H:i' }}
+            </td>
+            <td class="text-nowrap">
+              {% if object.dataTimeOpen %}
+                <span class="fw-semibold text-secondary">{{ object.dataTimeOpen|date:'d.m.Y H:i' }}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="fw-semibold">{{ object.unit.name|default:'—' }}</div>
+            </td>
+            <td>
+              {% if object.cars %}
+                <div><strong>{{ object.cars.mark }} {{ object.cars.model }}</strong></div>
+                <div class="kp-vin-cell">{{ object.cars.vin }}</div>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="fw-semibold">{{ object.clientName|default:'—' }}</div>
+              {% if object.clientPhone %}
+                <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ object.clientPhone }}</div>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if object.confirmed %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Да</span>
+              {% else %}
+                <span class="text-muted small">Нет</span>
+              {% endif %}
             </td>
           </tr>
-        {% endfor %} 
-      {% endif %}
-      
-    </tbody>
-    </table>
-  </div>
-
-  <hr>
-
-  <div class="row g-1">
-    <div class="col justify-content-center">
-      <div class="form-floating mb-3">
-        <select class="form-select" id="select_count" name="select_count" onchange="change_link()">
-          <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
-          <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
-          <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
-          <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
-        </select>
-        <label for="floatingInput">Выводить</label>
-      </div>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    <div class="col justify-content-center">
-      <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
-        
-        {% if  params.paginator.has_previous %}
-          <li class="page-num">
-              <a class="page-link text-secondary"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
-          </li>
+
+    <!-- Пагинация (в стиле ASP) -->
+    <div class="p-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div class="small text-muted">
+        {% if params.paginator.paginator.num_pages > 1 %}
+          Показано с <strong>{{ params.paginator.start_index }}</strong> по <strong>{{ params.paginator.end_index }}</strong> из <strong>{{ params.count }}</strong> записей
+        {% else %}
+          Всего записей: <strong>{{ params.count }}</strong>
         {% endif %}
-    
-        {% for p in params.paginator.paginator.page_range %}
-          {% if  params.paginator.number == p %}
-          <li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
-              {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+      </div>
+
+      {% if params.paginator.paginator.num_pages > 1 %}
+      <nav aria-label="Страницы отчёта">
+        <ul class="pagination pagination-sm mb-0 shadow-sm">
+          {% if params.paginator.has_previous %}
           <li class="page-item">
-            <a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+            <a class="page-link" href="?{% query_transform page=1 %}" title="Первая страница">«</a>
           </li>
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=params.paginator.previous_page_number %}" title="Предыдущая">←</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">«</span></li>
+          <li class="page-item disabled"><span class="page-link">←</span></li>
           {% endif %}
-        {% endfor %}
-          
-        {% if params.paginator.has_next %}
-          <li class="page-num">
-            <a class="page-link text-secondary" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
+
+          <li class="page-item active">
+            <span class="page-link">{{ params.paginator.number }} / {{ params.paginator.paginator.num_pages }}</span>
           </li>
-        {% endif %}
-    
+
+          {% if params.paginator.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=params.paginator.next_page_number %}" title="Следующая">→</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=params.paginator.paginator.num_pages %}" title="Последняя страница">»</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">→</span></li>
+          <li class="page-item disabled"><span class="page-link">»</span></li>
+          {% endif %}
         </ul>
       </nav>
-    </div>
-    <div class="col justify-content-center" >
-      Выведено : {{params.paginator.object_list|length}}
+      {% endif %}
     </div>
   </div>
 
-  <hr>
+  <!-- Блок аналитической воронки конверсий -->
+  <div class="asp-rep-panel mb-4">
+    <h3 class="mb-3" style="font-size: 1.05rem; font-weight: 600; color: #002a5a;">
+      <i class="bi bi-funnel-fill text-primary me-2"></i>Аналитика подтверждения визитов
+    </h3>
 
-  <div class="row g-1">
-
-    <div class="col-sm-4  my-auto">
-      <div class="table-responsive-sm">
-        <table class="table table-hover table-sm table-striped">
-        <tbody>
-          <tr>
-            <td>Всего</td>
-            <td>{{params.count}} </td>
-          </tr>
-          <tr>
-            <td>Открывались</td>
-            <td>{{params.count_opened}} </td>
-          </tr>
-          <tr>
-            <td>Подтверждено</td>
-            <td>{{params.count_confirmed}} </td>
-          </tr>
-        </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="col-sm-8 my-auto">
-      <script src="https://code.highcharts.com/highcharts.js"></script>
-      <script src="https://code.highcharts.com/highcharts-3d.js"></script>
-      <script src="https://code.highcharts.com/modules/cylinder.js"></script>
-      <script src="https://code.highcharts.com/modules/funnel3d.js"></script>
-      <script src="https://code.highcharts.com/modules/exporting.js"></script>
-      <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-      
-      <figure class="highcharts-figure">
-        <div id="container"></div>
-        <p class="highcharts-description">
-        
-        </p>
-      </figure>
-    </div>
-
-  </div>
-
-{% else %}
-  <div class="row g-1">
-              
-            
-    <div class="col-sm">
-      <div class="card mb-3 border-danger">
-          <div class="card-body">
-              
-              <div style="text-align: center;" class="row g-1">
-                <p class="fs-5 fw-normal">ХМ... данные не найдены, проверьте параметры отбора данных.</p>
-              </div>
-      
+    <div class="row g-4 align-items-center">
+      <div class="col-md-5">
+        <div class="conversion-stage-card">
+          <div class="conversion-stage-title">
+            <span><i class="bi bi-calendar-event text-primary me-1"></i> 1. Записей по графику</span>
+            <span class="badge bg-light text-dark border">100%</span>
           </div>
+          <div class="conversion-stage-value">{{ params.count }} шт.</div>
+          <div class="small text-muted mt-1">Клиентские записи в сервисном календаре</div>
+        </div>
+
+        <div class="conversion-stage-card">
+          <div class="conversion-stage-title">
+            <span><i class="bi bi-eye text-info me-1"></i> 2. Открыли ссылку</span>
+            <span class="badge bg-info-subtle text-info border border-info-subtle">{{ params.count_opened_percent }}%</span>
+          </div>
+          <div class="conversion-stage-value text-info">{{ params.count_opened }} шт.</div>
+          <div class="small text-muted mt-1">Перешли по ссылке подтверждения из SMS / мессенджера</div>
+        </div>
+
+        <div class="conversion-stage-card">
+          <div class="conversion-stage-title">
+            <span><i class="bi bi-check2-circle text-success me-1"></i> 3. Подтвердили приезд</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ params.count_confirmed_percent }}%</span>
+          </div>
+          <div class="conversion-stage-value text-success">{{ params.count_confirmed }} шт.</div>
+          <div class="small text-muted mt-1">
+            Нажали кнопку подтверждения визита ({{ params.count_opened_confirmed_percent }}% от открывших)
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-7">
+        <div id="container" style="min-height: 380px;"></div>
       </div>
     </div>
-
   </div>
-{% endif %}
 
+  <!-- Скрипты для графиков Highcharts -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+  <script src="https://code.highcharts.com/modules/cylinder.js"></script>
+  <script src="https://code.highcharts.com/modules/funnel3d.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
-{% if params.count > 0 %}
-  <script language="JavaScript">
-  // Set up the chart
+  <script>
     Highcharts.chart('container', {
-          chart: {
-            type: 'funnel3d',
-            options3d: {
-              enabled: true,
-              alpha: 10,
-              depth: 50,
-              viewDistance: 50
-            }
+      chart: {
+        type: 'funnel3d',
+        backgroundColor: 'transparent',
+        options3d: {
+          enabled: true,
+          alpha: 10,
+          depth: 50,
+          viewDistance: 50
+        }
+      },
+      title: {
+        text: 'Воронка подтверждения приезда по графику',
+        style: { color: '#002a5a', fontWeight: '600', fontSize: '15px' }
+      },
+      subtitle: {
+        text: '{{ params.filtr.date_start|date:"d.m.Y" }} — {{ params.filtr.date_end|date:"d.m.Y" }}{% if params.filtr.unit_name %} | {{ params.filtr.unit_name }}{% endif %}',
+        style: { color: '#64748b', fontSize: '12px' }
+      },
+      colors: ['#002a5a', '#0284c7', '#10b981'],
+      plotOptions: {
+        series: {
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>',
+            allowOverlap: true,
+            y: 10,
+            style: { fontSize: '11px', textOutline: 'none' }
           },
-          title: {
-            text: 'Воронка подтверждения приезда на сервис по графику <br> {{params.filtr.date_start|date:"d.m.Y"}} - {{params.filtr.date_end|date:"d.m.Y"}} {% if params.filtr.unit_name|length > 0 %} <br>{{params.filtr.unit_name}} {% endif %}'
-          },
-          accessibility: {
-            screenReaderSection: {
-              beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{typeDescription}</div><div>{chartSubtitle}</div><div>{chartLongdesc}</div>'
-            }
-          },
-          plotOptions: {
-            series: {
-              dataLabels: {
-                enabled: true,
-                format: '<b>{point.name}</b>',
-                allowOverlap: true,
-                y: 10
-              },
-              neckWidth: '30%',
-              neckHeight: '25%',
-              width: '80%',
-              height: '80%'
-            }
-          },
-          series: [{
-            name: ' ',
-            data: [
-              ['Всего - {{params.count}} (100%)', {{params.count}},],
-              ['Открывались - {{params.count_opened}} (от всех {{params.count_opened_percent}}%)', {{params.count_opened}}],
-              ['Подтверждено - {{params.count_confirmed}} (от всех {{params.count_confirmed_percent}}%) / (от открытых {{params.count_opened_confirmed_percent}}%)', {{params.count_confirmed}}]
-            ]
-          }]
-        });
-
-
+          neckWidth: '35%',
+          neckHeight: '28%',
+          width: '80%',
+          height: '80%'
+        }
+      },
+      series: [{
+        name: 'Количество',
+        data: [
+          ['Всего: {{ params.count }} (100%)', {{ params.count }}],
+          ['Открыли: {{ params.count_opened }} ({{ params.count_opened_percent }}%)', {{ params.count_opened }}],
+          ['Подтверждено: {{ params.count_confirmed }} ({{ params.count_confirmed_percent }}%)', {{ params.count_confirmed }}]
+        ]
+      }],
+      credits: { enabled: false }
+    });
   </script>
-{% endif %}
 
-<script language="JavaScript">
+  {% else %}
+  <div class="asp-rep-panel text-center py-5">
+    <i class="bi bi-inbox text-muted" style="font-size: 2.4rem; display: block; margin-bottom: 0.5rem;"></i>
+    <h4 style="font-size: 1.1rem; color: #002a5a; font-weight: 600;">Данные не найдены</h4>
+    <p class="text-muted small mb-0">Попробуйте изменить период дат или выбрать другое подразделение.</p>
+  </div>
+  {% endif %}
+</div>
 
-  function change_link(){
-    
-    var url 	= new URL(document.location.href);
-    
-    find_date = document.getElementById('date_start').value;
-    if (find_date.length > 0){
-      url.searchParams.set('date_start', find_date);
-    }else{
-      url.searchParams.delete('date_start')
-    }
-    find_date_end = document.getElementById('date_end').value;
-    if (find_date_end.length > 0){
-      url.searchParams.set('date_end', find_date_end);
-    }else{
-      url.searchParams.delete('date_end')
-    }
-    find_select_count = document.getElementById('select_count');
-    if (find_select_count != null){
-      find_select_count = find_select_count.value;
-      if (find_select_count.length > 0){
-        url.searchParams.set('select_count', find_select_count);
-      }else{
-        url.searchParams.delete('select_count')
-      }
-    }
-    find_unit_id = document.getElementById('unit_id').value;
-    if (find_unit_id.length > 0){
-      url.searchParams.set('unit_id', find_unit_id);
-    }else{
-      url.searchParams.delete('unit_id')
-    }
-    
-    document.location.href  = url.href;
+<script>
+  function setQuickDate(type) {
+    var startInput = document.getElementById('date_start');
+    var endInput = document.getElementById('date_end');
+    var today = new Date();
 
+    function fmt(d) {
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    if (type === 'current_month') {
+      var first = new Date(today.getFullYear(), today.getMonth(), 1);
+      var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      startInput.value = fmt(first);
+      endInput.value = fmt(last);
+    } else if (type === 'prev_month') {
+      var firstPrev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      var lastPrev = new Date(today.getFullYear(), today.getMonth(), 0);
+      startInput.value = fmt(firstPrev);
+      endInput.value = fmt(lastPrev);
+    } else if (type === 'last30') {
+      var past30 = new Date(today);
+      past30.setDate(today.getDate() - 30);
+      startInput.value = fmt(past30);
+      endInput.value = fmt(today);
+    }
+    document.getElementById('filterForm').submit();
   }
-
 </script>
-
 {% endblock %}

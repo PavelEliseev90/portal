@@ -1,207 +1,391 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block url %} {% endblock %}
-
-{% block title %} - Прайс-листы {% endblock %}
-
-{% block title_navbar %} - Прайс-листы {% endblock %}
+{% block title %} — Прайс-листы {% endblock %}
+{% block title_navbar %} — Прайс-листы {% endblock %}
 
 {% block content %}
-<div class="docs-zn-page">
-  <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2 class="mb-0" style="color: #002a5a; font-weight: 600;">Прайс-листы</h2>
-        <p class="text-muted mb-0">Управление загрузкой и обработкой прайс-листов</p>
+{% include 'asp/partials/asp_report_styles.html' %}
+
+<style>
+  /* Дополнительные стили для реестра прайс-листов в концепции ASP */
+  .badge-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+  }
+  .badge-status-confirmed {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+  .badge-status-opened {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .badge-status-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+  .badge-status-unread {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+  }
+  .kp-quick-btn {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+  }
+  .progress-sm {
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #e2e8f0;
+    overflow: hidden;
+  }
+  .table-asp .pos-progress-cell {
+    min-width: 140px;
+  }
+  .file-name-cell {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>
+
+<div class="asp-rep" data-report-key="prices_lists">
+  <!-- Заголовок страницы -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div>
+      <h2 class="mb-1"><i class="bi bi-tags-fill text-primary me-2"></i>Прайс-листы</h2>
+      <div class="lead mb-0">
+        Управление реестром, загрузкой и статусами обработки прайс-листов производителей
       </div>
-      <a href="/prices_lists/0/" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
-        <span class="icon-mbri-plus"></span> Добавить прайс-лист
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/prices_lists/" class="btn btn-sm btn-outline-secondary" title="Сбросить все фильтры">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить
+      </a>
+      <a href="/prices_lists/0/" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Добавить прайс-лист
       </a>
     </div>
+  </div>
 
-    <!-- Фильтры -->
-    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
-      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
-        <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
-          <span class="icon-mbri-filter"></span> Фильтры
-        </h5>
-      </div>
-      <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-          <div class="col-md-10">
-            <div class="form-floating">
-              <input type="text" list='options' class="form-control" id="manufacturen" name="manufacturen" 
-                     placeholder="Введите производителя" value="{{params.filtr.manufacturen}}"
-                     style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-              <label for="manufacturen">Производитель</label>
-              <datalist id='options'>
-                {% for manufacture in params.manufacturer %}
-                  <option value='{{manufacture.name}}'>
-                {% endfor %}
-              </datalist>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.75rem;">
-              <span class="icon-mbri-search"></span> Применить
-            </button>
-          </div>
-        </form>
+  <!-- Карточки ключевых показателей (KPI) -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl">
+      <div class="asp-rep-metric">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="t">Всего заданий</div>
+          <i class="bi bi-files text-primary fs-5"></i>
+        </div>
+        <div class="v my-1">{{ params.totals.total_count }}</div>
+        <div class="s">В текущей выборке</div>
       </div>
     </div>
-
-    <!-- Таблица прайс-листов -->
-    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
-      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
-        <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
-          <span class="icon-mbri-file"></span> Список прайс-листов
-        </h5>
+    <div class="col-sm-6 col-xl">
+      <div class="asp-rep-metric">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="t">Завершено успешно</div>
+          <i class="bi bi-check2-circle text-success fs-5"></i>
+        </div>
+        <div class="v my-1 text-success">{{ params.totals.success_count }}</div>
+        <div class="s">{{ params.totals.success_pct }}% успешных загрузок</div>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
-              <tr>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Дата</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Производитель</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Позиций</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Ответственный</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Статус</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if params.paginator.object_list %}
-                {% for object in params.paginator.object_list %}
-                  <tr onclick="window.location.href='/prices_lists/{{object.pk}}/'; return false" style="cursor: pointer;">
-                    <td style="padding: 1rem; vertical-align: middle;">
-                      <span style="color: #002a5a; font-weight: 500;">{{object.date|date:"d.m.Y H:i"}}</span>
-                    </td>
-                    <td style="padding: 1rem; vertical-align: middle;">
-                      <span style="color: #002a5a; font-weight: 500;">{{object.settings.name|default:"—"}}</span>
-                    </td>
-                    <td style="padding: 1rem; vertical-align: middle;">
-                      <span class="badge bg-info" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">
-                        {{object.positions_success|default:0}} / {{object.positions_all|default:0}}
-                      </span>
-                    </td>
-                    <td style="padding: 1rem; vertical-align: middle;">
-                      <span style="color: #6c7a92;">{{object.user.last_name}} {{object.user.first_name}}</span>
-                    </td>
-                    <td style="padding: 1rem; vertical-align: middle;">
-                      {% if object.status == "Ожидается загрузка" %}
-                        <span class="badge bg-warning text-dark" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
-                      {% elif "Ошибка" in object.status or "ошибка" in object.status|lower %}
-                        <span class="badge bg-danger" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
-                      {% elif "Завершено" in object.status or "завершено" in object.status|lower or "успешно" in object.status|lower %}
-                        <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
-                      {% else %}
-                        <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              {% else %}
-                <tr>
-                  <td colspan="5" class="text-center py-5" style="color: #6c7a92;">
-                    <div class="mb-3">
-                      <span class="icon-mbri-file" style="font-size: 3rem; opacity: 0.3;"></span>
+    </div>
+    <div class="col-sm-6 col-xl">
+      <div class="asp-rep-metric">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="t">Ожидают загрузки</div>
+          <i class="bi bi-hourglass-split text-warning fs-5"></i>
+        </div>
+        <div class="v my-1 text-warning">{{ params.totals.pending_count }}</div>
+        <div class="s">В очереди на обработку</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl">
+      <div class="asp-rep-metric">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="t">Ошибки обработки</div>
+          <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+        </div>
+        <div class="v my-1 text-danger">{{ params.totals.error_count }}</div>
+        <div class="s">Требуют внимания</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl">
+      <div class="asp-rep-metric">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="t">Обработано строк</div>
+          <i class="bi bi-list-check text-info fs-5"></i>
+        </div>
+        <div class="v my-1 text-info">{{ params.totals.total_positions_success }}</div>
+        <div class="s">Из {{ params.totals.total_positions }} позиций</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Панель фильтров в стиле ASP -->
+  <div class="asp-rep-filter mb-4">
+    <form method="get" id="filterForm" class="row g-3 align-items-end">
+      <!-- Быстрый выбор дат -->
+      <div class="col-12 mb-1">
+        <span class="text-muted small me-2"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Период:</span>
+        <button type="button" class="btn btn-sm btn-outline-primary kp-quick-btn me-1" onclick="setQuickDate('current_month')">Текущий месяц</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary kp-quick-btn me-1" onclick="setQuickDate('prev_month')">Прошлый месяц</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary kp-quick-btn me-1" onclick="setQuickDate('last30')">30 дней</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary kp-quick-btn" onclick="setQuickDate('all_time')">Все время</button>
+      </div>
+
+      <!-- Дата начала -->
+      <div class="col-6 col-md-3 col-xl-2">
+        <label for="date_start" class="form-label">Дата (С)</label>
+        <input type="date" class="form-control form-control-sm" id="date_start" name="date_start" value="{{ params.filtr.date_start }}">
+      </div>
+
+      <!-- Дата окончания -->
+      <div class="col-6 col-md-3 col-xl-2">
+        <label for="date_end" class="form-label">Дата (По)</label>
+        <input type="date" class="form-control form-control-sm" id="date_end" name="date_end" value="{{ params.filtr.date_end }}">
+      </div>
+
+      <!-- Производитель / Настройка -->
+      <div class="col-12 col-md-4 col-xl-3">
+        <label for="manufacturen" class="form-label">Производитель / Настройка</label>
+        <input type="text" list="options" class="form-control form-control-sm" id="manufacturen" name="manufacturen" 
+               placeholder="Поиск по бренду..." value="{{ params.filtr.manufacturen }}">
+        <datalist id="options">
+          {% for m in params.manufacturer %}
+            <option value="{{ m.name }}">
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <!-- Фильтр по статусу -->
+      <div class="col-6 col-md-3 col-xl-2">
+        <label for="status" class="form-label">Статус задания</label>
+        <select class="form-select form-select-sm" name="status" id="status">
+          <option value="">Все статусы</option>
+          <option value="success" {% if params.filtr.status == 'success' %}selected{% endif %}>Успешно завершено</option>
+          <option value="pending" {% if params.filtr.status == 'pending' %}selected{% endif %}>Ожидается загрузка</option>
+          <option value="error" {% if params.filtr.status == 'error' %}selected{% endif %}>Ошибка</option>
+        </select>
+      </div>
+
+      <!-- Количество строк -->
+      <div class="col-6 col-md-2 col-xl-1">
+        <label for="select_count" class="form-label">Строк</label>
+        <select class="form-select form-select-sm" name="select_count" id="select_count">
+          <option value="25" {% if params.select_count == 25 %}selected{% endif %}>25</option>
+          <option value="50" {% if params.select_count == 50 %}selected{% endif %}>50</option>
+          <option value="100" {% if params.select_count == 100 %}selected{% endif %}>100</option>
+          <option value="200" {% if params.select_count == 200 %}selected{% endif %}>200</option>
+        </select>
+      </div>
+
+      <!-- Кнопка фильтрации -->
+      <div class="col-12 col-md-3 col-xl-2">
+        <button class="btn btn-sm btn-primary w-100" type="submit">
+          <i class="bi bi-funnel-fill me-1"></i>Применить
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Таблица прайс-листов -->
+  <div class="asp-rep-panel no-padding mb-4">
+    <div class="p-3 bg-light border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <h3 class="mb-0" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+        <i class="bi bi-table text-primary me-2"></i>Реестр заданий загрузки
+      </h3>
+      <span class="badge bg-white text-secondary border">
+        Показано: {{ params.paginator|length }} из {{ params.totals.total_count }}
+      </span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-striped table-asp mb-0">
+        <thead>
+          <tr>
+            <th>Дата и время</th>
+            <th>Производитель / Настройка</th>
+            <th>Файл прайса</th>
+            <th class="pos-progress-cell">Обработано позиций</th>
+            <th>Ответственный</th>
+            <th>Статус</th>
+            <th class="text-center" style="width: 80px;">Действие</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if params.paginator.object_list %}
+            {% for object in params.paginator.object_list %}
+              <tr onclick="window.location.href='/prices_lists/{{ object.pk }}/';" style="cursor: pointer;">
+                <td>
+                  <span class="fw-semibold text-dark">{{ object.date|date:"d.m.Y" }}</span>
+                  <span class="text-muted small ms-1">{{ object.date|date:"H:i" }}</span>
+                </td>
+                <td>
+                  <div class="fw-semibold" style="color: #002a5a;">
+                    {{ object.manufacturer.name|default:object.settings.name|default:"—" }}
+                  </div>
+                  {% if object.settings.name and object.manufacturer.name and object.settings.name != object.manufacturer.name %}
+                  <div class="small text-muted">{{ object.settings.name }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="file-name-cell small" title="{{ object.file_name|default:object.path_file_price|default:'—' }}">
+                    <i class="bi bi-file-earmark-excel text-success me-1"></i>
+                    {{ object.file_name|default:object.path_file_price|default:"—" }}
+                  </div>
+                </td>
+                <td class="pos-progress-cell">
+                  <div class="d-flex justify-content-between align-items-center small mb-1">
+                    <span class="fw-semibold text-dark">{{ object.positions_success|default:0 }}</span>
+                    <span class="text-muted">из {{ object.positions_all|default:0 }}</span>
+                  </div>
+                  <div class="progress progress-sm">
+                    <div class="progress-bar {% if "ошиб" in object.status|lower %}bg-danger{% elif "заверш" in object.status|lower or "успеш" in object.status|lower %}bg-success{% else %}bg-primary{% endif %}" 
+                         role="progressbar" 
+                         style="width: {% if object.positions_all and object.positions_all > 0 %}{% widthratio object.positions_success object.positions_all 100 %}{% else %}0{% endif %}%;">
                     </div>
-                    <p class="mb-0">Прайс-листы не найдены</p>
-                    <a href="/prices_lists/0/" class="btn btn-primary mt-3" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem;">
-                      Добавить первый прайс-лист
-                    </a>
-                  </td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <!-- Пагинация и информация -->
-      {% if params.paginator.has_other_pages or params.paginator.paginator.count > 0 %}
-      <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-3" style="border-radius: 0 0 1.25rem 1.25rem; padding: 1rem 1.5rem; border-top: 1px solid rgba(0, 42, 90, 0.08);">
-        <div class="d-flex align-items-center gap-3">
-          <span class="text-muted small">Всего записей: <span class="fw-semibold">{{params.paginator.paginator.count}}</span></span>
-          <span class="text-muted small">Выведено: <span class="fw-semibold">{{params.paginator|length}}</span></span>
-        </div>
-        
-        {% if params.paginator.has_other_pages %}
-        <nav aria-label="Page navigation">
-          <ul class="pagination pagination-sm mb-0">
-            {% if params.paginator.has_previous %}
-              <li class="page-item">
-                <a class="page-link" href="?{% url_replace page=params.paginator.previous_page_number %}" aria-label="Предыдущая" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                  <span aria-hidden="true">&laquo;</span>
-                </a>
-              </li>
-            {% endif %}
-            
-            {% for p in params.paginator.paginator.page_range %}
-              {% if params.paginator.number == p %}
-                <li class="page-item active" aria-current="page">
-                  <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; margin: 0 0.25rem;">{{ p }}</span>
-                </li>
-              {% elif p >= params.paginator.number|add:-3 and p <= params.paginator.number|add:3 %}
-                <li class="page-item">
-                  <a class="page-link" href="?{% url_replace page=p %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">{{ p }}</a>
-                </li>
-              {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <span class="text-secondary small">
+                    {{ object.user.last_name|default:'' }} {{ object.user.first_name|default:'' }}
+                    {% if not object.user.last_name and not object.user.first_name %}
+                      {{ object.user.username|default:"Система" }}
+                    {% endif %}
+                  </span>
+                </td>
+                <td>
+                  {% if object.status == "Ожидается загрузка" %}
+                    <span class="badge-status-pill badge-status-opened">
+                      <i class="bi bi-hourglass-split"></i> {{ object.status }}
+                    </span>
+                  {% elif "ошиб" in object.status|lower %}
+                    <span class="badge-status-pill badge-status-error" title="{{ object.status }}">
+                      <i class="bi bi-x-circle"></i> {{ object.status|truncatechars:28 }}
+                    </span>
+                  {% elif "заверш" in object.status|lower or "успеш" in object.status|lower or "выполнен" in object.status|lower %}
+                    <span class="badge-status-pill badge-status-confirmed">
+                      <i class="bi bi-check-circle"></i> {{ object.status }}
+                    </span>
+                  {% else %}
+                    <span class="badge-status-pill badge-status-unread">
+                      {{ object.status|default:"Новый" }}
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-center" onclick="event.stopPropagation();">
+                  <a href="/prices_lists/{{ object.pk }}/" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size: 0.74rem;" title="Открыть карточку задания">
+                    <i class="bi bi-arrow-right"></i>
+                  </a>
+                </td>
+              </tr>
             {% endfor %}
-            
-            {% if params.paginator.has_next %}
-              <li class="page-item">
-                <a class="page-link" href="?{% url_replace page=params.paginator.next_page_number %}" aria-label="Следующая" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                  <span aria-hidden="true">&raquo;</span>
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem;"></i>
+                <h5 style="font-size: 1.05rem; color: #002a5a; font-weight: 600;">Прайс-листы не найдены</h5>
+                <p class="text-muted small mb-3">Попробуйте изменить параметры отбора или добавьте новый прайс-лист.</p>
+                <a href="/prices_lists/0/" class="btn btn-sm btn-primary">
+                  <i class="bi bi-plus-lg me-1"></i>Добавить прайс-лист
                 </a>
-              </li>
-            {% endif %}
-          </ul>
-        </nav>
-        {% endif %}
-        
-        <div class="d-flex align-items-center gap-2">
-          <label for="select_count" class="form-label text-muted small mb-0">Показывать:</label>
-          <select class="form-select form-select-sm w-auto" id="select_count" name="select_count" onchange='window.location.href="?{% url_replace select_count="" %}" + this.value;' style="border-radius: 0.5rem;">
-            <option value="25" {% if params.select_count == 25 %}selected{% endif %}>25</option>
-            <option value="50" {% if params.select_count == 50 %}selected{% endif %}>50</option>
-            <option value="100" {% if params.select_count == 100 %}selected{% endif %}>100</option>
-            <option value="200" {% if params.select_count == 200 %}selected{% endif %}>200</option>
-          </select>
-        </div>
-      </div>
-      {% endif %}
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
+
+    <!-- Пагинация в стиле ASP -->
+    {% if params.paginator.has_other_pages %}
+    <div class="p-3 bg-light border-top d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="text-muted small">
+        Страница <strong>{{ params.paginator.number }}</strong> из <strong>{{ params.paginator.paginator.num_pages }}</strong>
+        (всего <strong>{{ params.totals.total_count }}</strong> записей)
+      </div>
+
+      <nav aria-label="Пагинация прайс-листов">
+        <ul class="pagination pagination-sm mb-0">
+          {% if params.paginator.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=1 %}" title="Первая страница">«</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=params.paginator.previous_page_number %}" title="Предыдущая">←</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">«</span></li>
+          <li class="page-item disabled"><span class="page-link">←</span></li>
+          {% endif %}
+
+          <li class="page-item active">
+            <span class="page-link">{{ params.paginator.number }} / {{ params.paginator.paginator.num_pages }}</span>
+          </li>
+
+          {% if params.paginator.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=params.paginator.next_page_number %}" title="Следующая">→</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?{% query_transform page=params.paginator.paginator.num_pages %}" title="Последняя страница">»</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">→</span></li>
+          <li class="page-item disabled"><span class="page-link">»</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
   </div>
 </div>
 
-<style>
-.docs-zn-page {
-  background: #f4f7fb;
-  min-height: 100vh;
-  padding: 1.5rem 0;
-}
+<script>
+  function setQuickDate(type) {
+    var startInput = document.getElementById('date_start');
+    var endInput = document.getElementById('date_end');
+    var today = new Date();
 
-.card {
-  transition: all 0.3s ease;
-}
+    function fmt(d) {
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
 
-.card:hover {
-  box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
-}
-
-.table tbody tr {
-  transition: all 0.2s ease;
-}
-
-.table tbody tr:hover {
-  background-color: rgba(0, 42, 90, 0.03);
-}
-
-.table thead tr {
-  border-radius: 1.25rem 1.25rem 0 0;
-  overflow: hidden;
-}
-</style>
+    if (type === 'current_month') {
+      var first = new Date(today.getFullYear(), today.getMonth(), 1);
+      var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      startInput.value = fmt(first);
+      endInput.value = fmt(last);
+    } else if (type === 'prev_month') {
+      var firstPrev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      var lastPrev = new Date(today.getFullYear(), today.getMonth(), 0);
+      startInput.value = fmt(firstPrev);
+      endInput.value = fmt(lastPrev);
+    } else if (type === 'last30') {
+      var past30 = new Date(today);
+      past30.setDate(today.getDate() - 30);
+      startInput.value = fmt(past30);
+      endInput.value = fmt(today);
+    } else if (type === 'all_time') {
+      startInput.value = '';
+      endInput.value = '';
+    }
+    document.getElementById('filterForm').submit();
+  }
+</script>
 {% endblock %}

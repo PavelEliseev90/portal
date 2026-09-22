@@ -214,11 +214,17 @@ def deal_calc_approval_report(request):
     if export_qs:
         export_url = '{}?{}'.format(export_url, export_qs)
 
+    page_kvp_sum = sum(r.get('kvp') or 0 for r in rows)
+    page_km_sum = sum(r.get('km_formula') or 0 for r in rows)
+
     return render(request, 'prices_car/deal_calc_approval_report.html', {
         'params': {
             'type': 'deal_calc_approval_report',
+            'report_title': 'Отчёт по согласованию КП',
+            'report_subtitle': 'Мониторинг согласования коммерческих предложений новых автомобилей',
             'filtr': ctx['filtr'],
             'units': ctx['units'],
+            'type_sales': ctx['type_sales'],
             'metrics': ctx.get('metrics', {}),
             'rows': rows,
             'page_obj': page_obj,
@@ -227,6 +233,8 @@ def deal_calc_approval_report(request):
             'desktop_url': reverse('prices_car:new_cars_director_desktop') + uid_suffix,
             'export_url': export_url,
             'total_count': paginator.count,
+            'page_kvp_sum': page_kvp_sum,
+            'page_km_sum': page_km_sum,
         },
     })
 

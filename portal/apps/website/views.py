@@ -1726,6 +1726,7 @@ def dashboard_sms_opros(request):
     else:
         date_start      = request.GET.get('date_start', '')
         date_end        = request.GET.get('date_end', '')
+        city_id         = request.GET.get('city_id', '')
         
         date_period = DT.datetime.now()
         
@@ -1745,8 +1746,26 @@ def dashboard_sms_opros(request):
         else:
             date_end  = DT.datetime.strptime(date_end, '%Y-%m-%d')
         
+        base_citys_qs = DocZN.objects.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).values('unit__city', 'unit__city__name').exclude(unit__name = 'ЕЦО ГК').distinct().order_by('unit__city__name')
+        
+        all_cities = []
+        for c in base_citys_qs:
+            c_name = str(c.get('unit__city__name') or '')
+            c_pk = c.get('unit__city')
+            if c_name and c_pk:
+                all_cities.append({'id': str(c_pk), 'name': c_name})
+
+        citys = base_citys_qs
+        if city_id:
+            citys = citys.filter(unit__city__pk = city_id)
+
         data_list = list()
-        citys    = DocZN.objects.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).values('unit__city', 'unit__city__name').exclude(unit__name = 'ЕЦО ГК').distinct().order_by('unit__city__name')
+        total_docs_count = 0
+        total_docs_no = 0
+        total_docs_opros_waiting = 0
+        total_docs_opros_close = 0
+        total_docs_opros_all = 0
+
         for city in citys:
             city_name = str(city['unit__city__name'])
             if len(city_name) > 0:
@@ -1756,6 +1775,12 @@ def dashboard_sms_opros(request):
                 container_docs_no               = list()
                 container_docs_opros            = list()
                 container_docs_opros_close      = list()
+                units_breakdown                 = list()
+
+                city_docs_count = 0
+                city_docs_no = 0
+                city_docs_waiting = 0
+                city_docs_close = 0
                 
                 for unit in units_city:
                     unit_name = unit['unit__name']
@@ -1765,27 +1790,84 @@ def dashboard_sms_opros(request):
                         doc_opros_count         = DocOprosZN.objects.filter(zn__in = docs).count()
                         doc_opros_count_close   = DocOprosZN.objects.filter(close = True).filter(zn__in = docs).count()
                         
+                        docs_no = docs_count - doc_opros_count
+                        docs_waiting = doc_opros_count - doc_opros_count_close
+
                         container_unit.append(unit_name)
-                        container_docs_no.append(docs_count - doc_opros_count)
-                        container_docs_opros.append(doc_opros_count - doc_opros_count_close)
+                        container_docs_no.append(docs_no)
+                        container_docs_opros.append(docs_waiting)
                         container_docs_opros_close.append(doc_opros_count_close)
+
+                        city_docs_count += docs_count
+                        city_docs_no += docs_no
+                        city_docs_waiting += docs_waiting
+                        city_docs_close += doc_opros_count_close
+
+                        unit_opros_total = doc_opros_count
+                        unit_completion_pct = round(doc_opros_count_close / unit_opros_total * 100, 1) if unit_opros_total > 0 else 0
+                        unit_coverage_pct = round(unit_opros_total / docs_count * 100, 1) if docs_count > 0 else 0
+
+                        units_breakdown.append({
+                            'unit_name': unit_name,
+                            'docs_count': docs_count,
+                            'docs_no': docs_no,
+                            'docs_waiting': docs_waiting,
+                            'docs_close': doc_opros_count_close,
+                            'opros_total': unit_opros_total,
+                            'completion_pct': unit_completion_pct,
+                            'coverage_pct': unit_coverage_pct,
+                        })
+
+                city_opros_total = city_docs_waiting + city_docs_close
+                city_completion_pct = round(city_docs_close / city_opros_total * 100, 1) if city_opros_total > 0 else 0
+                city_coverage_pct = round(city_opros_total / city_docs_count * 100, 1) if city_docs_count > 0 else 0
+
+                total_docs_count += city_docs_count
+                total_docs_no += city_docs_no
+                total_docs_opros_waiting += city_docs_waiting
+                total_docs_opros_close += city_docs_close
+                total_docs_opros_all += city_opros_total
+
                 data_list_params = {
+                    'city_id'                       : city['unit__city'],
                     'city_name'                     : city['unit__city__name'],
                     'container_unit'                : str(container_unit).replace("'",'"'),
                     'container_docs_no'             : container_docs_no,
                     'container_docs_opros'          : container_docs_opros,
                     'container_docs_opros_close'    : container_docs_opros_close,
+                    'city_docs_count'               : city_docs_count,
+                    'city_docs_no'                  : city_docs_no,
+                    'city_docs_waiting'             : city_docs_waiting,
+                    'city_docs_close'               : city_docs_close,
+                    'city_opros_total'              : city_opros_total,
+                    'city_completion_pct'           : city_completion_pct,
+                    'city_coverage_pct'             : city_coverage_pct,
+                    'units_count'                   : len(container_unit),
+                    'units_breakdown'               : units_breakdown,
                 }
                 data_list.append(data_list_params)
 
+        totals = {
+            'total_docs_count': total_docs_count,
+            'total_docs_no': total_docs_no,
+            'total_docs_opros_waiting': total_docs_opros_waiting,
+            'total_docs_opros_close': total_docs_opros_close,
+            'total_docs_opros_all': total_docs_opros_all,
+            'coverage_pct': round(total_docs_opros_all / total_docs_count * 100, 1) if total_docs_count > 0 else 0,
+            'completion_pct': round(total_docs_opros_close / total_docs_opros_all * 100, 1) if total_docs_opros_all > 0 else 0,
+        }
+
         filtr = {
             'date_start'        : date_start,
-            'date_end'          : date_end
+            'date_end'          : date_end,
+            'city_id'           : str(city_id) if city_id else '',
         }
         params = {
             'type'          : 'dashboard_sms_opros',
             'filtr'         : filtr,
-            'data_list'     : data_list
+            'data_list'     : data_list,
+            'totals'        : totals,
+            'cities'        : all_cities,
         }
         return render(request, 'website/dashboard_sms_opros.html', {'params': params}) 
 
@@ -5092,8 +5174,6 @@ def prices_lists(request):
         return HttpResponseRedirect('/')
     
     try:
-        text = ''
-        
         # Безопасное получение параметра select_count
         try:
             countListRecord = int(request.GET.get('select_count', '25'))
@@ -5104,14 +5184,76 @@ def prices_lists(request):
         
         filter_count = 0
 
-        tasks = TaskRegPrices.objects.all().order_by('-date')
+        tasks = TaskRegPrices.objects.all().select_related('manufacturer', 'settings', 'user').order_by('-date')
         
         manufacturen = request.GET.get('manufacturen', '').strip()
-        
         if len(manufacturen) > 0:
-            tasks = tasks.filter(manufacturer__name__icontains=manufacturen)
-            filter_count = filter_count + 1
+            tasks = tasks.filter(
+                Q(manufacturer__name__icontains=manufacturen) |
+                Q(settings__name__icontains=manufacturen)
+            )
+            filter_count += 1
         
+        status_filter = request.GET.get('status', '').strip()
+        if status_filter == 'success':
+            tasks = tasks.filter(
+                Q(status__icontains='завершено') | Q(status__icontains='успешно') | Q(status__icontains='выполнен')
+            )
+            filter_count += 1
+        elif status_filter == 'pending':
+            tasks = tasks.filter(
+                Q(status__icontains='ожидается') | Q(status__icontains='загрузк') | Q(status__icontains='обработк')
+            )
+            filter_count += 1
+        elif status_filter == 'error':
+            tasks = tasks.filter(status__icontains='ошибк')
+            filter_count += 1
+
+        date_start = request.GET.get('date_start', '').strip()
+        date_end = request.GET.get('date_end', '').strip()
+        if date_start:
+            try:
+                dt_start = DT.datetime.strptime(date_start, '%Y-%m-%d')
+                tasks = tasks.filter(date__gte=dt_start)
+                filter_count += 1
+            except ValueError:
+                pass
+        if date_end:
+            try:
+                dt_end = DT.datetime.strptime(date_end, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                tasks = tasks.filter(date__lte=dt_end)
+                filter_count += 1
+            except ValueError:
+                pass
+
+        # Подсчет сводных показателей (KPI)
+        total_filtered = tasks.count()
+        success_count = tasks.filter(
+            Q(status__icontains='завершено') | Q(status__icontains='успешно') | Q(status__icontains='выполнен')
+        ).count()
+        pending_count = tasks.filter(
+            Q(status__icontains='ожидается') | Q(status__icontains='загрузк') | Q(status__icontains='обработк')
+        ).count()
+        error_count = tasks.filter(status__icontains='ошибк').count()
+
+        pos_agg = tasks.aggregate(
+            total_pos=Sum('positions_all'),
+            success_pos=Sum('positions_success')
+        )
+        total_positions = pos_agg.get('total_pos') or 0
+        total_positions_success = pos_agg.get('success_pos') or 0
+        success_pct = round(success_count / total_filtered * 100, 1) if total_filtered > 0 else 0
+
+        totals = {
+            'total_count': total_filtered,
+            'success_count': success_count,
+            'pending_count': pending_count,
+            'error_count': error_count,
+            'total_positions': total_positions,
+            'total_positions_success': total_positions_success,
+            'success_pct': success_pct,
+        }
+
         # Безопасная пагинация
         try:
             page_number = request.GET.get('page', 1)
@@ -5125,7 +5267,10 @@ def prices_lists(request):
         
         filtr = {
             'manufacturen': manufacturen,
-            'filtr_count': filter_count
+            'status': status_filter,
+            'date_start': date_start,
+            'date_end': date_end,
+            'filtr_count': filter_count,
         }
 
         params = {
@@ -5135,6 +5280,7 @@ def prices_lists(request):
             'manufacturer': RefManufacturer.objects.all().order_by('name'),
             'paginator': page_obj,
             'filtr': filtr,
+            'totals': totals,
         }
 
         return render(request, 'prices/prices_lists.html', {'params': params})
@@ -5143,14 +5289,14 @@ def prices_lists(request):
         messages.error(request, f'Ошибка при загрузке списка прайс-листов: {str(e)}')
         import traceback
         print(traceback.format_exc())
-        # Возвращаем пустой список в случае ошибки
         params = {
             'type': 'prices',
             'page_number': 1,
             'select_count': 25,
             'manufacturer': RefManufacturer.objects.all().order_by('name'),
             'paginator': Paginator(TaskRegPrices.objects.none(), 25).page(1),
-            'filtr': {'manufacturen': '', 'filtr_count': 0},
+            'filtr': {'manufacturen': '', 'status': '', 'date_start': '', 'date_end': '', 'filtr_count': 0},
+            'totals': {'total_count': 0, 'success_count': 0, 'pending_count': 0, 'error_count': 0, 'total_positions': 0, 'total_positions_success': 0, 'success_pct': 0},
         }
         return render(request, 'prices/prices_lists.html', {'params': params})
 
