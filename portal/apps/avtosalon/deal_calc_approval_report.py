@@ -156,6 +156,7 @@ def build_approval_report_queryset(request):
     )
     only_shipped = (request.GET.get('only_shipped') or '').strip() in ('1', 'true', 'yes', 'on')
     soglasovanie = (request.GET.get('soglasovanie') or '').strip()
+    type_sale = (request.GET.get('type_sale') or '').strip()
 
     allowed_unit_ids = list(approval_report_units_qs().values_list('pk', flat=True))
     if unit_ids:
@@ -190,6 +191,7 @@ def build_approval_report_queryset(request):
             'unit',
             'unit__city',
             'car',
+            'car__type_sale',
             'car__modification_autoru',
             'car__modification_autoru__model',
             'car__modification_autoru__model__mark',
@@ -203,6 +205,7 @@ def build_approval_report_queryset(request):
         .annotate(
             shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
             shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
+            shipment_type_sale=Subquery(shipment_qs.values('typeSale')[:1]),
         )
     )
     if sale_kvp_sq is not None:
@@ -218,6 +221,14 @@ def build_approval_report_queryset(request):
         qs = qs.filter(unit_id__in=unit_ids)
     if only_shipped:
         qs = qs.filter(shipment_pk__isnull=False)
+    if type_sale:
+        if type_sale.isdigit():
+            qs = qs.filter(car__type_sale_id=int(type_sale))
+        else:
+            qs = qs.filter(
+                Q(car__type_sale__name__icontains=type_sale)
+                | Q(shipment_type_sale__icontains=type_sale)
+            )
     if soglasovanie:
         if soglasovanie == 'auto_approved':
             qs = qs.filter(_auto_approved_q())
@@ -259,6 +270,7 @@ def build_approval_report_queryset(request):
         'filter_unit': unit_ids,
         'only_shipped': only_shipped,
         'soglasovanie': soglasovanie,
+        'type_sale': type_sale,
     }
     return qs.order_by('-date', '-pk'), filtr
 
@@ -277,6 +289,8 @@ def build_approval_report_querystring(filtr, *, page=None):
         params.append(('soglasovanie', filtr['soglasovanie']))
     if filtr.get('only_shipped'):
         params.append(('only_shipped', '1'))
+    if filtr.get('type_sale'):
+        params.append(('type_sale', str(filtr['type_sale'])))
     if page:
         params.append(('page', str(page)))
     return urlencode(params)
@@ -435,6 +449,8 @@ def serialize_approval_report_row(calc, brand_resolver=None):
     brand_km_min_dc = brand_km_data.get('km_min_dc') if brand_km_data else None
     is_yellow, date_report_str = is_yellow_car_at_date(car, calc.date)
 
+    type_sale_name = getattr(calc, 'shipment_type_sale', None) or (calc.car.type_sale.name if calc.car and getattr(calc.car, 'type_sale', None) else '') or '—'
+
     return {
         'pk': calc.pk,
         'url': reverse('avtosalon:deal_calculation_doc', kwargs={'id': calc.pk}),
@@ -450,6 +466,7 @@ def serialize_approval_report_row(calc, brand_resolver=None):
         'complectation': _car_complectation(car) or '—',
         'year': car.year if car and car.year else '—',
         'vin': car.vin if car and car.vin else '—',
+        'type_sale': type_sale_name,
         'is_yellow': is_yellow,
         'date_report_str': date_report_str,
         'brand_km_month': brand_km_month,
@@ -484,6 +501,7 @@ def build_approval_report_excel(rows):
         'Комплектация',
         'Год',
         'VIN',
+        'Тип продажи',
         'Жёлтый АМ',
         'КМ на месяц',
         'КВП',
@@ -520,6 +538,7 @@ def build_approval_report_excel(rows):
             row['complectation'],
             row['year'],
             row['vin'],
+            row.get('type_sale', '—'),
             'Да' if row.get('is_yellow') else 'Нет',
             row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
             row['kvp'] if row['kvp'] is not None else '',
@@ -573,22 +592,28 @@ def compute_approval_report_metrics(qs):
         ]
     ).count()
     shipped = qs.filter(shipment_pk__isnull=False).count()
+    total_kvp = qs.aggregate(s=Sum('kvp'))['s'] or 0
     return {
         'auto_approved': auto_count,
         'manual_approved': manual_approved,
         'pending': pending,
         'rejected': rejected,
         'shipped': shipped,
+        'total_kvp': total_kvp,
     }
 
 
 def build_approval_report_context(request):
+    from refs.models import RefTypeSaleCarsOrganization
+
     qs, filtr = build_approval_report_queryset(request)
     units = approval_report_units_qs()
+    type_sales = RefTypeSaleCarsOrganization.objects.all().order_by('name')
     metrics = compute_approval_report_metrics(qs)
     return {
         'filtr': filtr,
         'units': units,
+        'type_sales': type_sales,
         'metrics': metrics,
         'queryset': qs,
         'querystring': build_approval_report_querystring(filtr),
