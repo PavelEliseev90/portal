@@ -423,17 +423,16 @@
     z-index: 1040;
     padding: 0.4rem 0.5rem;
   }
-  .sn-nav-tabs {
+  .sn-nav-tabs.nav {
     max-width: 600px;
     margin: 0 auto;
     display: flex;
+    flex-wrap: nowrap;
     border: none;
     gap: 0.35rem;
   }
-  .sn-nav-item {
-    flex: 1;
-  }
-  .sn-nav-btn {
+  .sn-nav-btn.nav-link {
+    flex: 1 1 0;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -451,15 +450,15 @@
     transition: all 0.2s ease;
     text-decoration: none;
   }
-  .sn-nav-btn i {
+  .sn-nav-btn.nav-link i {
     font-size: 1.25rem;
     line-height: 1;
   }
-  .sn-nav-btn:hover {
+  .sn-nav-btn.nav-link:hover {
     color: #002a5a;
     background: rgba(241, 245, 249, 0.6);
   }
-  .sn-nav-btn.active {
+  .sn-nav-btn.nav-link.active {
     color: #002a5a !important;
     background: #e2e8f0 !important;
     font-weight: 700;
@@ -1380,61 +1379,69 @@
 
 <!-- Премиальный мобильный Bottom Navigation Bar -->
 <nav class="sn-bottom-nav">
-  <div class="sn-nav-tabs" id="nav-tab" role="tablist">
+  <div class="nav nav-pills sn-nav-tabs" id="nav-tab" role="tablist">
 
     {% if not params.doc.typeRemont.warranty %}
-      <div class="sn-nav-item">
-        <button class="sn-nav-btn active" id="nav-zn-tab" href="#z" data-bs-toggle="tab" data-bs-target="#z" type="button" role="tab" aria-controls="z" aria-selected="true">
-          <i class="bi bi-file-earmark-text"></i>
-          <span>Заказ-наряд</span>
-        </button>
-      </div>
+      <button class="nav-link sn-nav-btn active" id="nav-zn-tab" data-bs-toggle="tab" data-bs-target="#z" type="button" role="tab" aria-controls="z" aria-selected="true">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>Заказ-наряд</span>
+      </button>
     {% endif %}
 
     {% if params.opros %}
-      <div class="sn-nav-item">
-        <button class="sn-nav-btn {% if params.doc.typeRemont.warranty %}active{% endif %}" id="nav-opros-tab" href="#o" data-bs-toggle="tab" data-bs-target="#o" type="button" role="tab" aria-controls="o" aria-selected="false">
-          <i class="bi bi-chat-square-heart"></i>
-          <span>Опрос</span>
-          {% if not params.doc.get_opros_close and params.doc.closed %}
-            <span class="sn-nav-badge badge bg-danger p-1"><span class="visually-hidden">Новый</span></span>
-          {% endif %}
-        </button>
-      </div>
+      <button class="nav-link sn-nav-btn {% if params.doc.typeRemont.warranty %}active{% endif %}" id="nav-opros-tab" data-bs-toggle="tab" data-bs-target="#o" type="button" role="tab" aria-controls="o" aria-selected="false">
+        <i class="bi bi-chat-square-heart"></i>
+        <span>Опрос</span>
+        {% if not params.doc.get_opros_close and params.doc.closed %}
+          <span class="sn-nav-badge badge bg-danger p-1"><span class="visually-hidden">Новый</span></span>
+        {% endif %}
+      </button>
     {% endif %}
 
     {% if not params.doc.typeRemont.warranty %}
-      <div class="sn-nav-item">
-        <button class="sn-nav-btn" id="nav-recomendation-tab" href="#r" data-bs-toggle="tab" data-bs-target="#r" type="button" role="tab" aria-controls="r" aria-selected="false">
-          <i class="bi bi-tools"></i>
-          <span>Рекомендации</span>
-          {% if params.doc.recomendations_customer_1_count > 0 %}
-            <span class="sn-nav-badge badge bg-danger">{{ params.doc.recomendations_new_customer }}</span>
-          {% endif %}
-        </button>
-      </div>
+      <button class="nav-link sn-nav-btn" id="nav-recomendation-tab" data-bs-toggle="tab" data-bs-target="#r" type="button" role="tab" aria-controls="r" aria-selected="false">
+        <i class="bi bi-tools"></i>
+        <span>Рекомендации</span>
+        {% if params.doc.recomendations_customer_1_count > 0 %}
+          <span class="sn-nav-badge badge bg-danger">{{ params.doc.recomendations_new_customer }}</span>
+        {% endif %}
+      </button>
     {% endif %}
 
   </div>
 </nav>
 
-<!-- Авто-активация вкладки по URL Hash и переключение классов active на кнопках -->
+<!-- Авто-активация вкладки по URL Hash и синхронизация адреса -->
 <script>
-  jQuery(document).ready(function ($) {
-    var urlTab = window.location.hash;
-    if (urlTab) {
-      var tabTrigger = $('.sn-nav-btn[href="' + urlTab + '"]');
-      if (tabTrigger.length) {
-        tabTrigger.trigger('click');
+  (function () {
+    function activateTabByHash(hash) {
+      if (!hash) return;
+      var triggerEl = document.querySelector('#nav-tab button[data-bs-target="' + hash + '"]');
+      if (triggerEl) {
+        if (window.bootstrap && bootstrap.Tab) {
+          var tabInstance = bootstrap.Tab.getOrCreateInstance(triggerEl);
+          if (tabInstance) tabInstance.show();
+        } else if (window.jQuery) {
+          $(triggerEl).tab('show');
+        }
       }
     }
 
-    // Поддержка синхронизации класса active на кастомных кнопках
-    $('.sn-nav-btn').on('shown.bs.tab', function (e) {
-      $('.sn-nav-btn').removeClass('active');
-      $(e.target).addClass('active');
+    if (window.location.hash) {
+      activateTabByHash(window.location.hash);
+    }
+
+    window.addEventListener('hashchange', function () {
+      activateTabByHash(window.location.hash);
     });
-  });
+
+    document.addEventListener('shown.bs.tab', function (e) {
+      var target = e.target.getAttribute('data-bs-target');
+      if (target && history.replaceState) {
+        history.replaceState(null, null, target);
+      }
+    });
+  })();
 </script>
 
 {% endblock %}

@@ -113,6 +113,9 @@
       <p class="lead mb-0">{{ params.report_subtitle|default:'Мониторинг согласования коммерческих предложений новых автомобилей' }}</p>
     </div>
     <div class="d-flex flex-wrap gap-2 align-items-center">
+      <button type="button" class="btn btn-outline-secondary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalAspColumns" title="Настройка отображаемых колонок">
+        <i class="bi bi-layout-three-columns me-1"></i>Колонки
+      </button>
       <a href="{{ params.export_url }}" class="btn btn-outline-success btn-sm shadow-sm" title="Выгрузить текущую выборку в Excel">
         <i class="bi bi-file-earmark-excel me-1"></i>Выгрузить в Excel
       </a>
@@ -275,140 +278,187 @@
       <table class="table table-sm table-hover table-striped table-asp mb-0">
         <thead>
           <tr>
-            <th>Подразделение / город</th>
-            <th>Марка</th>
-            <th>Модель</th>
-            <th>Комплектация</th>
-            <th>Год</th>
-            <th>VIN</th>
-            <th>Тип продажи</th>
-            <th class="text-center" title="Автомобиль отчитан перед импортёром на момент КП (дата рапорта заполнена)">Жёлтый АМ</th>
-            <th class="num" title="Норматив кумулятивной маржи бренда на месяц (BrandKM)">КМ на месяц</th>
-            <th class="num" title="Расчетный КМ в коммерческом предложении">КП</th>
-            <th class="num">КВП</th>
-            <th class="num" title="Снимок формулы на момент согласования">Итог по формуле</th>
-            <th>Статус согласования</th>
-            <th>Согласовал директор</th>
-            <th>Согласовал УК</th>
-            <th class="num">Доходность уехала</th>
-            <th>РЛ / КП / Отгрузка</th>
+            {% for col in params.table_columns %}
+              {% include 'asp/partials/_asp_col_head.html' with col=col params=params %}
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% for row in params.rows %}
           <tr>
-            <td>
-              <div class="fw-semibold">{{ row.unit_name }}</div>
-              {% if row.city_name and row.city_name != '—' %}
-                <div class="small text-muted">{{ row.city_name }}</div>
-              {% endif %}
-            </td>
-            <td class="fw-semibold">{{ row.mark }}</td>
-            <td>{{ row.model }}</td>
-            <td><span class="small text-muted">{{ row.complectation }}</span></td>
-            <td>{{ row.year }}</td>
-            <td class="kp-vin-cell">{{ row.vin }}</td>
-            <td>
-              {% if row.type_sale and row.type_sale != '—' %}
-                <span class="badge-type-sale">{{ row.type_sale }}</span>
+            {% for col in params.table_columns %}
+              {% if col.key == 'unit' %}
+                <td>
+                  <div class="fw-semibold">{{ row.unit_name }}</div>
+                  {% if row.city_name and row.city_name != '—' %}
+                    <div class="small text-muted">{{ row.city_name }}</div>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'mark' %}
+                <td class="fw-semibold">{{ row.mark }}</td>
+              {% elif col.key == 'model' %}
+                <td>{{ row.model }}</td>
+              {% elif col.key == 'complectation' %}
+                <td><span class="small text-muted">{{ row.complectation }}</span></td>
+              {% elif col.key == 'year' %}
+                <td>{{ row.year }}</td>
+              {% elif col.key == 'vin' %}
+                <td class="kp-vin-cell">{{ row.vin }}</td>
+              {% elif col.key == 'type_sale' %}
+                <td>
+                  {% if row.type_sale and row.type_sale != '—' %}
+                    <span class="badge-type-sale">{{ row.type_sale }}</span>
+                  {% else %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'is_yellow' %}
+                <td class="text-center text-nowrap">
+                  {% if row.is_yellow %}
+                    <span class="badge" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 600; font-size: 0.78rem; padding: 0.25rem 0.55rem; border-radius: 9999px;" {% if row.date_report_str %}title="Отчитан: {{ row.date_report_str }}"{% endif %}>
+                      <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem; color: #ca8a04;"></i>Да
+                    </span>
+                  {% else %}
+                    <span class="text-muted small">Нет</span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'brand_km_month' %}
+                <td class="num text-nowrap">
+                  {% if row.brand_km_month is not None %}
+                    <span class="fw-semibold">{{ row.brand_km_month|floatformat:"0g" }}&nbsp;₽</span>
+                    {% if row.brand_km_min_dc and row.brand_km_min_dc != row.brand_km_month %}
+                      <div class="small text-muted" title="Минимальное значение КМ ДЦ">мин: {{ row.brand_km_min_dc|floatformat:"0g" }}&nbsp;₽</div>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'km_raschet' %}
+                <td class="num text-nowrap">
+                  {% if row.km_raschet is not None %}{{ row.km_raschet|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
+                </td>
+              {% elif col.key == 'kvp' %}
+                <td class="num text-nowrap fw-semibold">
+                  {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
+                </td>
+              {% elif col.key == 'km_formula' %}
+                <td class="num text-nowrap">
+                  {% if row.km_formula is not None %}{{ row.km_formula|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
+                </td>
+              {% elif col.key == 'soglasovanie' %}
+                <td>
+                  {% if row.is_auto_approved %}
+                    <span class="badge-status badge-auto-approved" title="Согласовано автоматически алгоритмом автопереоценки">
+                      <i class="bi bi-lightning-charge-fill text-warning"></i>Согласовано автоматически
+                    </span>
+                  {% elif row.soglasovanie_status == 'director_approved' %}
+                    <span class="badge-status badge-director-approved">
+                      <i class="bi bi-check-circle-fill"></i>Согласовано директором
+                    </span>
+                  {% elif row.soglasovanie_status == 'uk_approved' %}
+                    <span class="badge-status badge-uk-approved">
+                      <i class="bi bi-shield-check"></i>Согласовано УК
+                    </span>
+                  {% elif row.soglasovanie_status == 'pending_uk' %}
+                    <span class="badge-status badge-pending">
+                      <i class="bi bi-clock-history"></i>На согласовании УК
+                    </span>
+                  {% elif row.soglasovanie_status == 'director_rejected' or row.soglasovanie_status == 'uk_rejected' %}
+                    <span class="badge-status badge-rejected">
+                      <i class="bi bi-x-circle-fill"></i>Отказ
+                    </span>
+                  {% else %}
+                    <span class="badge-status badge-pending">
+                      <i class="bi bi-hourglass-split"></i>{{ row.soglasovanie_label }}
+                    </span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'director_approver' %}
+                <td>
+                  {% if row.is_auto_approved %}
+                    <span class="badge-auto-tag" title="Автоматическое согласование роботом">
+                      <i class="bi bi-robot"></i>Автоматически
+                    </span>
+                  {% else %}
+                    {{ row.director_approver }}
+                  {% endif %}
+                </td>
+              {% elif col.key == 'uk_approver' %}
+                <td>{{ row.uk_approver }}</td>
+              {% elif col.key == 'sale_profit' %}
+                <td class="num text-nowrap">
+                  {% if row.sale_profit is not None %}
+                    <span class="fw-semibold {% if row.sale_profit >= 0 %}pos{% else %}neg{% endif %}">
+                      {{ row.sale_profit|floatformat:"0g" }}&nbsp;₽
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'docs' %}
+                <td class="text-nowrap">
+                  <div>
+                    <span class="small text-muted">РЛ:</span>
+                    <span class="fw-semibold">{{ row.rlk_nomer }}</span>
+                  </div>
+                  <div>
+                    <a href="{{ row.url }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none" title="Открыть коммерческое предложение">
+                      КП {{ row.number }} <i class="bi bi-box-arrow-up-right" style="font-size:0.75rem"></i>
+                    </a>
+                  </div>
+                  {% if row.shipped %}
+                    <div class="small text-success mt-1">
+                      <i class="bi bi-truck me-1"></i>Отгр. {{ row.shipment_nomer }}
+                    </div>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'calc_discount' %}
+                <td class="num text-nowrap">
+                  {% if row.calc_discount %}
+                    <span class="neg">-{{ row.calc_discount|floatformat:"0g" }}&nbsp;₽</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'calc_custom_opfu' or col.key == 'calc_custom_tradein' or col.key == 'calc_custom_wheels' or col.key == 'calc_custom_grz' or col.key == 'calc_custom_work' or col.key == 'calc_custom_product' %}
+                <td class="num text-nowrap">
+                  {% with val=row|get_item:col.key %}
+                    {% if val %}
+                      <span class="pos">+{{ val|floatformat:"0g" }}&nbsp;₽</span>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  {% endwith %}
+                </td>
               {% else %}
-                <span class="text-muted small">—</span>
+                {# Колонки показателей CarCalculationsDetail (detail_<id>) или динамические #}
+                <td class="{% if col.num %}num text-nowrap{% endif %}">
+                  {% with d=row|get_item:col.key %}
+                    {% if d %}
+                      {% if d.success is not None %}
+                        {% if d.success %}
+                          <span class="fw-semibold text-success" title="Применено в КП (ВП: {{ d.vp|floatformat:'0g' }} ₽, сумма: {{ d.amount|floatformat:'0g' }} ₽)">
+                            +{{ d.vp|default:d.amount|floatformat:"0g" }}&nbsp;₽
+                          </span>
+                        {% else %}
+                          <span class="text-muted" title="Не применено (ВП: {{ d.vp|floatformat:'0g' }} ₽)">
+                            {{ d.vp|default:d.amount|floatformat:"0g" }}&nbsp;₽
+                          </span>
+                        {% endif %}
+                      {% else %}
+                        {{ d }}
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  {% endwith %}
+                </td>
               {% endif %}
-            </td>
-            <td class="text-center text-nowrap">
-              {% if row.is_yellow %}
-                <span class="badge" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 600; font-size: 0.78rem; padding: 0.25rem 0.55rem; border-radius: 9999px;" {% if row.date_report_str %}title="Отчитан: {{ row.date_report_str }}"{% endif %}>
-                  <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem; color: #ca8a04;"></i>Да
-                </span>
-              {% else %}
-                <span class="text-muted small">Нет</span>
-              {% endif %}
-            </td>
-            <td class="num text-nowrap">
-              {% if row.brand_km_month is not None %}
-                <span class="fw-semibold">{{ row.brand_km_month|floatformat:"0g" }}&nbsp;₽</span>
-                {% if row.brand_km_min_dc and row.brand_km_min_dc != row.brand_km_month %}
-                  <div class="small text-muted" title="Минимальное значение КМ ДЦ">мин: {{ row.brand_km_min_dc|floatformat:"0g" }}&nbsp;₽</div>
-                {% endif %}
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            </td>
-            <td class="num text-nowrap">
-              {% if row.km_raschet is not None %}{{ row.km_raschet|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
-            </td>
-            <td class="num text-nowrap fw-semibold">
-              {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
-            </td>
-            <td class="num text-nowrap">
-              {% if row.km_formula is not None %}{{ row.km_formula|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
-            </td>
-            <td>
-              {% if row.is_auto_approved %}
-                <span class="badge-status badge-auto-approved" title="Согласовано автоматически алгоритмом автопереоценки">
-                  <i class="bi bi-lightning-charge-fill text-warning"></i>Согласовано автоматически
-                </span>
-              {% elif row.soglasovanie_status == 'director_approved' %}
-                <span class="badge-status badge-director-approved">
-                  <i class="bi bi-check-circle-fill"></i>Согласовано директором
-                </span>
-              {% elif row.soglasovanie_status == 'uk_approved' %}
-                <span class="badge-status badge-uk-approved">
-                  <i class="bi bi-shield-check"></i>Согласовано УК
-                </span>
-              {% elif row.soglasovanie_status == 'pending_uk' %}
-                <span class="badge-status badge-pending">
-                  <i class="bi bi-clock-history"></i>На согласовании УК
-                </span>
-              {% elif row.soglasovanie_status == 'director_rejected' or row.soglasovanie_status == 'uk_rejected' %}
-                <span class="badge-status badge-rejected">
-                  <i class="bi bi-x-circle-fill"></i>Отказ
-                </span>
-              {% else %}
-                <span class="badge-status badge-pending">
-                  <i class="bi bi-hourglass-split"></i>{{ row.soglasovanie_label }}
-                </span>
-              {% endif %}
-            </td>
-            <td>
-              {% if row.is_auto_approved %}
-                <span class="badge-auto-tag" title="Автоматическое согласование роботом">
-                  <i class="bi bi-robot"></i>Автоматически
-                </span>
-              {% else %}
-                {{ row.director_approver }}
-              {% endif %}
-            </td>
-            <td>{{ row.uk_approver }}</td>
-            <td class="num text-nowrap">
-              {% if row.sale_profit is not None %}
-                <span class="fw-semibold {% if row.sale_profit >= 0 %}pos{% else %}neg{% endif %}">
-                  {{ row.sale_profit|floatformat:"0g" }}&nbsp;₽
-                </span>
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            </td>
-            <td class="text-nowrap">
-              <div>
-                <span class="small text-muted">РЛ:</span>
-                <span class="fw-semibold">{{ row.rlk_nomer }}</span>
-              </div>
-              <div>
-                <a href="{{ row.url }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none" title="Открыть коммерческое предложение">
-                  КП {{ row.number }} <i class="bi bi-box-arrow-up-right" style="font-size:0.75rem"></i>
-                </a>
-              </div>
-              {% if row.shipped %}
-                <div class="small text-success mt-1">
-                  <i class="bi bi-truck me-1"></i>Отгр. {{ row.shipment_nomer }}
-                </div>
-              {% endif %}
-            </td>
+            {% endfor %}
           </tr>
           {% empty %}
           <tr>
-            <td colspan="17" class="text-center text-muted py-5">
+            <td colspan="{{ params.table_columns|length|default:17 }}" class="text-center text-muted py-5">
               <i class="bi bi-inbox text-muted" style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem;"></i>
               <div class="fw-semibold">Коммерческих предложений не найдено</div>
               <div class="small text-muted mt-1">
@@ -425,11 +475,12 @@
         {% if params.rows %}
         <tfoot>
           <tr class="row-total">
-            <td colspan="9">Итого на странице · {{ params.rows|length }} КП (всего по фильтру: {{ params.total_count }})</td>
-            <td class="num">{{ params.page_kp_sum|floatformat:"0g" }}&nbsp;₽</td>
-            <td class="num">{{ params.page_kvp_sum|floatformat:"0g" }}&nbsp;₽</td>
-            <td class="num">{{ params.page_km_sum|floatformat:"0g" }}&nbsp;₽</td>
-            <td colspan="5"></td>
+            <td colspan="{{ params.table_columns|length|default:17 }}">
+              Итого на странице: <strong>{{ params.rows|length }}</strong> КП (всего по фильтру: <strong>{{ params.total_count }}</strong>)
+              {% if params.page_kp_sum %} · КП: <strong>{{ params.page_kp_sum|floatformat:"0g" }}&nbsp;₽</strong>{% endif %}
+              {% if params.page_kvp_sum %} · КВП: <strong>{{ params.page_kvp_sum|floatformat:"0g" }}&nbsp;₽</strong>{% endif %}
+              {% if params.page_km_sum %} · Формула: <strong>{{ params.page_km_sum|floatformat:"0g" }}&nbsp;₽</strong>{% endif %}
+            </td>
           </tr>
         </tfoot>
         {% endif %}
@@ -481,6 +532,8 @@
     </div>
   </div>
 </div>
+
+{% include 'asp/partials/asp_report_columns_modal.html' %}
 
 <script>
   function setQuickDate(type) {
