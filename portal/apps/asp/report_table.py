@@ -12,14 +12,15 @@ COLUMNS_COOKIE_VERSION = {
     'margin': 'v6',
     'stock': 'v6',
     'accepted': 'v4',
-    'deal_calc_approval': 'v1',
+    'deal_calc_approval': 'v3',
 }
 
 # --- Согласование КП (новые автомобили) ---
 DEAL_CALC_APPROVAL_BASE_COLUMNS = [
     'unit', 'mark', 'model', 'complectation', 'year', 'vin',
-    'type_sale', 'is_yellow', 'brand_km_month', 'km_raschet', 'kvp', 'km_formula',
-    'soglasovanie', 'director_approver', 'uk_approver', 'sale_profit', 'docs',
+    'type_sale', 'is_yellow', 'brand_km_month', 'kvp', 'km_formula',
+    'soglasovanie', 'director_approver', 'uk_approver', 'sale_profit',
+    'diff_kp', 'diff_formula', 'docs',
 ]
 DEAL_CALC_APPROVAL_COLUMN_DEFS = {
     'unit': {'label': 'Подразделение / город', 'sortable': True, 'sort_key': 'unit', 'num': False},
@@ -31,21 +32,15 @@ DEAL_CALC_APPROVAL_COLUMN_DEFS = {
     'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
     'is_yellow': {'label': 'Жёлтый АМ', 'sortable': True, 'sort_key': 'is_yellow', 'num': False},
     'brand_km_month': {'label': 'КМ на месяц', 'sortable': False, 'sort_key': 'brand_km_month', 'num': True},
-    'km_raschet': {'label': 'КП', 'sortable': True, 'sort_key': 'km_raschet', 'num': True},
-    'kvp': {'label': 'КВП', 'sortable': True, 'sort_key': 'kvp', 'num': True},
-    'km_formula': {'label': 'Итог по формуле', 'sortable': True, 'sort_key': 'km_formula', 'num': True},
+    'kvp': {'label': 'КП', 'label_export': 'КП', 'sortable': True, 'sort_key': 'kvp', 'num': True},
+    'km_formula': {'label': 'Формула', 'label_export': 'Формула', 'sortable': True, 'sort_key': 'km_formula', 'num': True},
     'soglasovanie': {'label': 'Статус согласования', 'sortable': True, 'sort_key': 'soglasovanie', 'num': False},
     'director_approver': {'label': 'Согласовал директор', 'sortable': True, 'sort_key': 'director_approver', 'num': False},
     'uk_approver': {'label': 'Согласовал УК', 'sortable': True, 'sort_key': 'uk_approver', 'num': False},
     'sale_profit': {'label': 'Доходность уехала', 'sortable': False, 'sort_key': 'sale_profit', 'num': True},
+    'diff_kp': {'label': 'Разница с КП', 'label_export': 'Разница с КП', 'sortable': False, 'sort_key': 'diff_kp', 'num': True, 'signed': True},
+    'diff_formula': {'label': 'Разница с формулой', 'label_export': 'Разница с формулой', 'sortable': False, 'sort_key': 'diff_formula', 'num': True, 'signed': True},
     'docs': {'label': 'РЛ / КП / Отгрузка', 'sortable': True, 'sort_key': 'date', 'num': False},
-    'calc_discount': {'label': 'Скидка ДЦ (КП)', 'sortable': True, 'sort_key': 'calc_discount', 'num': True},
-    'calc_custom_opfu': {'label': 'ОПФУ (КП)', 'sortable': True, 'sort_key': 'calc_custom_opfu', 'num': True},
-    'calc_custom_tradein': {'label': 'Trade-in (КП)', 'sortable': True, 'sort_key': 'calc_custom_tradein', 'num': True},
-    'calc_custom_wheels': {'label': 'Шины (КП)', 'sortable': True, 'sort_key': 'calc_custom_wheels', 'num': True},
-    'calc_custom_grz': {'label': 'Гос. рег. (КП)', 'sortable': True, 'sort_key': 'calc_custom_grz', 'num': True},
-    'calc_custom_work': {'label': 'Работы (КП)', 'sortable': True, 'sort_key': 'calc_custom_work', 'num': True},
-    'calc_custom_product': {'label': 'Запчасти (КП)', 'sortable': True, 'sort_key': 'calc_custom_product', 'num': True},
 }
 DEAL_CALC_APPROVAL_SORT_FIELDS = {
     'unit': 'unit__name',
@@ -56,20 +51,12 @@ DEAL_CALC_APPROVAL_SORT_FIELDS = {
     'vin': 'car__vin',
     'type_sale': 'car__type_sale__name',
     'is_yellow': 'car__date_report',
-    'km_raschet': 'km_raschet',
     'kvp': 'kvp',
     'km_formula': 'km_raschet',
     'soglasovanie': 'soglasovanie_status',
     'director_approver': 'director_approve_user__first_name',
     'uk_approver': 'uk_approve_user__first_name',
     'date': 'date',
-    'calc_discount': 'discount',
-    'calc_custom_opfu': 'custom_opfu',
-    'calc_custom_tradein': 'custom_tradein',
-    'calc_custom_wheels': 'custom_wheels',
-    'calc_custom_grz': 'custom_grz',
-    'calc_custom_work': 'custom_work',
-    'calc_custom_product': 'custom_product',
 }
 
 
@@ -78,7 +65,18 @@ def get_deal_calc_approval_config() -> dict[str, Any]:
     defaults = list(DEAL_CALC_APPROVAL_BASE_COLUMNS)
     try:
         from prices_car.models import CarCalculationsTypeDetail
+        excluded_names = {
+            'валовая прибыль допы',
+            'вознаграждение опфу',
+        }
         for dt in CarCalculationsTypeDetail.objects.exclude(name='').order_by('name'):
+            clean_name = ' '.join((dt.name or '').strip().lower().split())
+            if (
+                clean_name in excluded_names
+                or clean_name.startswith('валовая прибыль доп')
+                or clean_name.startswith('вознаграждение опфу')
+            ):
+                continue
             col_key = f'detail_{dt.id}'
             defs[col_key] = {
                 'label': dt.name,
@@ -544,21 +542,15 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'type_sale': row.get('type_sale'),
             'is_yellow': 'Да' if row.get('is_yellow') else 'Нет',
             'brand_km_month': row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
-            'km_raschet': row.get('km_raschet') if row.get('km_raschet') is not None else '',
             'kvp': row.get('kvp') if row.get('kvp') is not None else '',
             'km_formula': row.get('km_formula') if row.get('km_formula') is not None else '',
             'soglasovanie': row.get('soglasovanie_label') or '',
             'director_approver': row.get('director_approver') if row.get('director_approver') != '—' else '',
             'uk_approver': row.get('uk_approver') if row.get('uk_approver') != '—' else '',
             'sale_profit': row.get('sale_profit') if row.get('sale_profit') is not None else '',
+            'diff_kp': row.get('diff_kp') if row.get('diff_kp') is not None else '',
+            'diff_formula': row.get('diff_formula') if row.get('diff_formula') is not None else '',
             'docs': f"РЛ: {row.get('rlk_nomer') or ''}, КП: {row.get('number') or ''}".strip(),
-            'calc_discount': row.get('calc_discount') if row.get('calc_discount') is not None else '',
-            'calc_custom_opfu': row.get('calc_custom_opfu') if row.get('calc_custom_opfu') is not None else '',
-            'calc_custom_tradein': row.get('calc_custom_tradein') if row.get('calc_custom_tradein') is not None else '',
-            'calc_custom_wheels': row.get('calc_custom_wheels') if row.get('calc_custom_wheels') is not None else '',
-            'calc_custom_grz': row.get('calc_custom_grz') if row.get('calc_custom_grz') is not None else '',
-            'calc_custom_work': row.get('calc_custom_work') if row.get('calc_custom_work') is not None else '',
-            'calc_custom_product': row.get('calc_custom_product') if row.get('calc_custom_product') is not None else '',
         }
         return mapping.get(key, row.get(key, ''))
     # accepted

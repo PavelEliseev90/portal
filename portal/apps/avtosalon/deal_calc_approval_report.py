@@ -206,6 +206,7 @@ def build_approval_report_queryset(request):
             shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
             shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
             shipment_type_sale=Subquery(shipment_qs.values('typeSale')[:1]),
+            shipment_cumulative_margin=Subquery(shipment_qs.values('cumulative_margin')[:1]),
         )
     )
     if sale_kvp_sq is not None:
@@ -433,13 +434,30 @@ def serialize_approval_report_row(calc, brand_resolver=None, details_map=None):
     unit = calc.unit
     city = getattr(unit, 'city', None) if unit else None
     shipped = bool(getattr(calc, 'shipment_pk', None))
+    shipment_cm = getattr(calc, 'shipment_cumulative_margin', None)
     sale_kvp = getattr(calc, 'sale_kvp', None)
-    if sale_kvp is not None:
+    if shipped and shipment_cm is not None:
+        sale_profit = shipment_cm
+    elif sale_kvp is not None:
         sale_profit = sale_kvp
     elif shipped:
         sale_profit = calc.kvp
     else:
         sale_profit = None
+
+    diff_kp = None
+    if calc.kvp is not None and sale_profit is not None:
+        try:
+            diff_kp = round(float(calc.kvp) - float(sale_profit), 2)
+        except (ValueError, TypeError):
+            diff_kp = None
+
+    diff_formula = None
+    if calc.km_raschet is not None and sale_profit is not None:
+        try:
+            diff_formula = round(float(calc.km_raschet) - float(sale_profit), 2)
+        except (ValueError, TypeError):
+            diff_formula = None
 
     is_auto = is_auto_approved_calc(calc)
     if is_auto:
@@ -492,6 +510,8 @@ def serialize_approval_report_row(calc, brand_resolver=None, details_map=None):
         'shipped': shipped,
         'shipment_nomer': getattr(calc, 'shipment_nomer', None) or '',
         'sale_profit': sale_profit,
+        'diff_kp': diff_kp,
+        'diff_formula': diff_formula,
         # Поля коммерческого предложения
         'calc_discount': calc.discount,
         'calc_custom_opfu': calc.custom_opfu,
@@ -560,13 +580,14 @@ def build_approval_report_excel(rows, visible_columns=None):
             'Жёлтый АМ',
             'КМ на месяц',
             'КП',
-            'КВП',
-            'Итог по формуле',
+            'Формула',
             'Статус согласования',
             'Автосогласование',
             'Согласовал директор',
             'Согласовал УК',
             'Доходность уехала',
+            'Разница с КП',
+            'Разница с формулой',
             'Номер РЛ',
             'Номер КП',
             'Номер отгрузки',
@@ -591,7 +612,6 @@ def build_approval_report_excel(rows, visible_columns=None):
                 row.get('type_sale', '—'),
                 'Да' if row.get('is_yellow') else 'Нет',
                 row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
-                row['km_raschet'] if row.get('km_raschet') is not None else '',
                 row['kvp'] if row['kvp'] is not None else '',
                 row['km_formula'] if row['km_formula'] is not None else '',
                 row['soglasovanie_label'],
@@ -599,6 +619,8 @@ def build_approval_report_excel(rows, visible_columns=None):
                 row['director_approver'] if row['director_approver'] != '—' else '',
                 row['uk_approver'] if row['uk_approver'] != '—' else '',
                 row['sale_profit'] if row['sale_profit'] is not None else '',
+                row.get('diff_kp') if row.get('diff_kp') is not None else '',
+                row.get('diff_formula') if row.get('diff_formula') is not None else '',
                 row['rlk_nomer'],
                 row['number'],
                 row['shipment_nomer'] or '',
