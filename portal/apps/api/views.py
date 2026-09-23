@@ -5720,6 +5720,19 @@ def get_shipment(shipment):
     if 'AmountKits' in shipment:
         shipment_object.amount_kits = shipment['AmountKits']
 
+    # Кумулятивная маржа — заполняем, если ключ есть в словаре от 1С
+    for cm_key in (
+        'CumulativeMargin', 'cumulative_margin', 'Cumulative_Margin',
+        'КумулятивнаяМаржа', 'кумулятивная_маржа', 'Кумулятивная_маржа',
+        'CM', 'Cm', 'cm',
+    ):
+        if cm_key in shipment and shipment[cm_key] is not None and shipment[cm_key] != '':
+            try:
+                shipment_object.cumulative_margin = float(shipment[cm_key])
+            except (ValueError, TypeError):
+                pass
+            break
+
     shipment_object.save()
 
     return shipment_object

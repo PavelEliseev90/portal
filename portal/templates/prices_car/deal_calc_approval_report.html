@@ -333,10 +333,6 @@
                     <span class="text-muted">—</span>
                   {% endif %}
                 </td>
-              {% elif col.key == 'km_raschet' %}
-                <td class="num text-nowrap">
-                  {% if row.km_raschet is not None %}{{ row.km_raschet|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
-                </td>
               {% elif col.key == 'kvp' %}
                 <td class="num text-nowrap fw-semibold">
                   {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
@@ -395,6 +391,26 @@
                     <span class="text-muted">—</span>
                   {% endif %}
                 </td>
+              {% elif col.key == 'diff_kp' %}
+                <td class="num text-nowrap">
+                  {% if row.diff_kp is not None %}
+                    <span class="fw-semibold {% if row.diff_kp >= 0 %}pos{% else %}neg{% endif %}">
+                      {% if row.diff_kp > 0 %}+{% endif %}{{ row.diff_kp|floatformat:"0g" }}&nbsp;₽
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              {% elif col.key == 'diff_formula' %}
+                <td class="num text-nowrap">
+                  {% if row.diff_formula is not None %}
+                    <span class="fw-semibold {% if row.diff_formula >= 0 %}pos{% else %}neg{% endif %}">
+                      {% if row.diff_formula > 0 %}+{% endif %}{{ row.diff_formula|floatformat:"0g" }}&nbsp;₽
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
               {% elif col.key == 'docs' %}
                 <td class="text-nowrap">
                   <div>
@@ -411,24 +427,6 @@
                       <i class="bi bi-truck me-1"></i>Отгр. {{ row.shipment_nomer }}
                     </div>
                   {% endif %}
-                </td>
-              {% elif col.key == 'calc_discount' %}
-                <td class="num text-nowrap">
-                  {% if row.calc_discount %}
-                    <span class="neg">-{{ row.calc_discount|floatformat:"0g" }}&nbsp;₽</span>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-              {% elif col.key == 'calc_custom_opfu' or col.key == 'calc_custom_tradein' or col.key == 'calc_custom_wheels' or col.key == 'calc_custom_grz' or col.key == 'calc_custom_work' or col.key == 'calc_custom_product' %}
-                <td class="num text-nowrap">
-                  {% with val=row|get_item:col.key %}
-                    {% if val %}
-                      <span class="pos">+{{ val|floatformat:"0g" }}&nbsp;₽</span>
-                    {% else %}
-                      <span class="text-muted">—</span>
-                    {% endif %}
-                  {% endwith %}
                 </td>
               {% else %}
                 {# Колонки показателей CarCalculationsDetail (detail_<id>) или динамические #}
@@ -478,7 +476,6 @@
             <td colspan="{{ params.table_columns|length|default:17 }}">
               Итого на странице: <strong>{{ params.rows|length }}</strong> КП (всего по фильтру: <strong>{{ params.total_count }}</strong>)
               {% if params.page_kp_sum %} · КП: <strong>{{ params.page_kp_sum|floatformat:"0g" }}&nbsp;₽</strong>{% endif %}
-              {% if params.page_kvp_sum %} · КВП: <strong>{{ params.page_kvp_sum|floatformat:"0g" }}&nbsp;₽</strong>{% endif %}
               {% if params.page_km_sum %} · Формула: <strong>{{ params.page_km_sum|floatformat:"0g" }}&nbsp;₽</strong>{% endif %}
             </td>
           </tr>
