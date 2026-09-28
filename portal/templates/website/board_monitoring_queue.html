@@ -5,38 +5,6 @@
 {% block title_navbar %} — {{ params.title }} {% endblock %}
 
 {% block content %}
-<style>
-  .kors-monitoring-page {
-    --ok-bg: #e7f6ed; --ok-fg: #146c3b;
-    --bad-bg: #fde8e8; --bad-fg: #b42318;
-    --ink: #1a2b3c; --muted: #6b7c8f; --line: rgba(26, 43, 60, 0.08);
-    padding: 0.65rem 0.85rem 1.5rem; background: #eef2f6; min-height: 100vh; font-size: 0.82rem;
-  }
-  .kors-panel {
-    background: #fff; border-radius: 0.55rem; padding: 0.55rem 0.7rem;
-    border: 1px solid var(--line); box-shadow: none;
-  }
-  .kors-queue-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-  .kors-queue-table th, .kors-queue-table td {
-    padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: middle;
-  }
-  .kors-queue-table th {
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.65rem;
-  }
-  .kors-badge {
-    display: inline-flex; align-items: center; padding: 0.1rem 0.4rem;
-    border-radius: 0.3rem; font-size: 0.65rem; font-weight: 650;
-  }
-  .kors-badge-remote { background: #fff4df; color: #9a6700; }
-  .kors-badge-local { background: #e8f1fb; color: #1d4e89; }
-  .kors-send-ok { background: var(--ok-bg); color: var(--ok-fg); }
-  .kors-send-fail { background: var(--bad-bg); color: var(--bad-fg); }
-  .kors-resp {
-    white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace;
-    font-size: 0.7rem; max-height: 8rem; overflow: auto; margin: 0.25rem 0 0;
-    padding: 0.35rem 0.45rem; border-radius: 0.35rem; background: #f6f8fa; border: 1px solid var(--line);
-  }
-</style>
 
 <div class="kors-monitoring-page">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">

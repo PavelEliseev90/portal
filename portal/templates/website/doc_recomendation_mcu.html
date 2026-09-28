@@ -1,286 +1,424 @@
 {% extends 'base_web.html' %}
+{% load l10n %}
 
-{% block url %} {% endblock %} 
+{% block url %}{% endblock %}
 
-{% block title %} - рекомендация {{params.recomendation.id}} {% endblock %}
+{% block title %} — Рекомендация МКУ № {{ params.recomendation.id }} к ЗН {{ params.recomendation.zn.nomer }}{% endblock %}
 
-{% block title_navbar %} - рекомендация {{params.recomendation.id}} {% endblock %}
-    
+{% block title_navbar %} — Рекомендация МКУ № {{ params.recomendation.id }}{% endblock %}
+
 {% block content %}
- 	
+<div class="portal-rec-page">
+  <!-- Хлебные крошки -->
+  <div class="portal-rec-nav">
+    <a href="/"><i class="bi bi-house-door me-1"></i>Портал</a>
+    <span class="sep">/</span>
+    <a href="/docs_zn_report_tizer_mcu/"><i class="bi bi-file-earmark-bar-graph me-1"></i>Отчёт по рекомендациям МКУ</a>
+    <span class="sep">/</span>
+    <span class="curr">Рекомендация МКУ № {{ params.recomendation.id }}</span>
+  </div>
 
-<div class="col-sm">
-	
-	<h4>Рекомендация МКУ №{{params.recomendation.id}} от {{params.recomendation.dataTime}} по заказ - наряду {{params.recomendation.zn.nomer}}
-		
-		<button type="button" class="btn btn-outline-dark btn-block" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable">
-			
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-text" viewBox="0 0 16 16">
-				<path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
-				<path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
-			</svg>
-			
-		</button>
+  <!-- Главный заголовок страницы -->
+  <div class="portal-rec-header">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h2>
+          <span>Рекомендация МКУ № {{ params.recomendation.id }}</span>
+          {% if params.recomendation.customerStatus == 0 %}
+            <span class="rec-status-badge rec-status-0" title="Статус согласования: Неактивна">
+              <i class="bi bi-dash-circle"></i> Неактивна
+            </span>
+          {% elif params.recomendation.customerStatus == 1 %}
+            <span class="rec-status-badge rec-status-1" title="Статус согласования: На согласовании">
+              <i class="bi bi-hourglass-split"></i> На согласовании
+            </span>
+          {% elif params.recomendation.customerStatus == 2 %}
+            <span class="rec-status-badge rec-status-2" title="Статус согласования: Согласовано клиентом">
+              <i class="bi bi-check-circle-fill"></i> Согласовано
+            </span>
+          {% else %}
+            <span class="rec-status-badge rec-status-3" title="Статус согласования: Отклонена клиентом">
+              <i class="bi bi-x-circle-fill"></i> Отклонена
+            </span>
+          {% endif %}
+        </h2>
+        <p class="subtitle">
+          от {{ params.recomendation.dataTime|date:"d.m.Y H:i" }} &bull; Заказ-наряд 
+          <strong>№ {{ params.recomendation.zn.nomer }}</strong>
+          {% if params.doc.unit %}
+            &bull; {{ params.doc.unit.name }}
+          {% endif %}
+        </p>
+      </div>
 
-	</h4>
-	
+      <!-- Действия -->
+      <div class="d-flex flex-wrap gap-2 actions">
+        <button type="button" class="btn btn-portal-primary" data-bs-toggle="modal" data-bs-target="#znDetailsModal" title="Открыть подробную карточку заказ-наряда">
+          <i class="bi bi-file-text me-1"></i> Заказ-наряд № {{ params.doc.nomer }}
+        </button>
+        <button type="button" class="btn btn-portal-outline" id="btnCopyRecLink" onclick="copyCurrentUrl()" title="Скопировать постоянную ссылку на рекомендацию">
+          <i class="bi bi-link-45deg me-1"></i> Ссылка
+        </button>
+        <button type="button" class="btn btn-portal-outline" onclick="window.print()" title="Распечатать карточку рекомендации">
+          <i class="bi bi-printer me-1"></i> Печать
+        </button>
+      </div>
+    </div>
+  </div>
 
-	<hr>
+  <!-- Блок KPI метрик -->
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-sm-6 col-xl-4">
+      <div class="portal-rec-metric">
+        <div class="t">Медиа материалы</div>
+        <div class="v text-primary">{{ params.recomendation.recomendation_files_mcu_count }}</div>
+        <div class="s">прикреплённых фото / видео МКУ</div>
+      </div>
+    </div>
+    <div class="col-6 col-sm-6 col-xl-4">
+      <div class="portal-rec-metric">
+        <div class="t">Дата создания</div>
+        <div class="v" style="font-size: 1.15rem;">{{ params.recomendation.dataTime|date:"d.m.Y H:i" }}</div>
+        <div class="s">фиксация рекомендации</div>
+      </div>
+    </div>
+    <div class="col-6 col-sm-12 col-xl-4">
+      <div class="portal-rec-metric">
+        <div class="t">Ответ клиента</div>
+        <div class="v" style="font-size: 1.15rem;">
+          {% if params.recomendation.dataTimeCutomerEvent %}
+            {{ params.recomendation.dataTimeCutomerEvent|date:"d.m.Y H:i" }}
+          {% else %}
+            <span class="text-muted fw-normal">Ожидается</span>
+          {% endif %}
+        </div>
+        <div class="s">обработка клиентом</div>
+      </div>
+    </div>
+  </div>
 
-	<div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
-		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-		<div class="modal-content">
-			<div class="modal-header">
-			<h6 class="modal-title" id="exampleModalCenteredScrollableTitle">Заказ - наряд - {{params.doc.nomer}} от {{params.doc.dataTime|date:"d.m.Y H:i"}}</h6>
-			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-			</div>
-			<div class="modal-body">
-			
-				<label class="fs-4 text-start fw-normal">
-					№ {{params.doc.nomer}} <br> от {{params.doc.dataTime}} 
-				</label><br>
+  <!-- Двухколоночный блок: Инфо о рекомендации и Контекст заказ-наряда -->
+  <div class="row g-3 mb-3">
+    <!-- Детали рекомендации -->
+    <div class="col-12 col-lg-7">
+      <div class="portal-rec-panel h-100">
+        <div class="portal-rec-panel-header">
+          <h3 class="portal-rec-panel-title">
+            <i class="bi bi-card-text text-primary"></i> Содержание рекомендации МКУ
+          </h3>
+        </div>
 
-				<label class="fs-6 text-start fw-normal">
-					Вид ремонта: 
-				</label> 
-				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary">{{params.doc.typeRemont}}</span>
-				</label>
-				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Клиент: 
-				</label> <br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary">{{params.doc.customer}}</span><br>
+        <div class="mb-3">
+          <div class="field-label"><i class="bi bi-chat-left-quote"></i> Наименование / Описание</div>
+          <div class="p-3 bg-light rounded-3 text-dark fs-6" style="border-left: 4px solid #002a5a;">
+            {{ params.recomendation.name|default:"Наименование не указано"|linebreaksbr }}
+          </div>
+        </div>
 
-				</label>
-				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Автомобиль: 
-				</label> <br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary">{{params.doc.cars.mark}} {{params.doc.cars.model}}</span><br>
-					<span class="icon-mbri-minus text-secondary">{{params.doc.cars.vin}}</span><br>
-					<span class="icon-mbri-minus text-secondary">{{params.doc.cars.year}} г.</span><br>
-					<span class="icon-mbri-minus text-secondary">{{params.doc.run|floatformat:"0g"}} км.</span><br>
+        <div class="row g-3 mt-1">
+          <div class="col-6 col-md-6">
+            <div class="field-label"><i class="bi bi-calendar-event"></i> Дата создания</div>
+            <div class="field-value">{{ params.recomendation.dataTime|date:"d.m.Y H:i" }}</div>
+          </div>
+          <div class="col-6 col-md-6">
+            <div class="field-label"><i class="bi bi-info-circle"></i> Статус ЗН</div>
+            <div class="field-value">
+              {% if params.doc.closed %}
+                <span class="badge bg-secondary-subtle text-secondary border">Закрыт</span>
+              {% else %}
+                <span class="badge bg-success-subtle text-success border">В работе</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-				</label>
+    <!-- Заказ-наряд и Автомобиль -->
+    <div class="col-12 col-lg-5">
+      <div class="portal-rec-panel h-100">
+        <div class="portal-rec-panel-header">
+          <h3 class="portal-rec-panel-title">
+            <i class="bi bi-car-front text-primary"></i> Автомобиль и Заказ-наряд
+          </h3>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#znDetailsModal">
+            Вся инфо
+          </button>
+        </div>
 
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Заявка со слов клиента: 
-				</label> <br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary">{{params.doc.customerWords}}</span><br>
-				</label>
+        <div class="zn-card mb-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <div class="fw-bold fs-6 text-dark">
+                {{ params.doc.cars.mark }} {{ params.doc.cars.model }}
+              </div>
+              <div class="text-secondary small">
+                VIN: <span class="font-monospace fw-semibold">{{ params.doc.cars.vin|default:"—" }}</span>
+              </div>
+            </div>
+            {% if params.doc.carsGRZ %}
+              <span class="badge bg-white text-dark border font-monospace px-2 py-1">
+                {{ params.doc.carsGRZ }}
+              </span>
+            {% endif %}
+          </div>
 
-				<hr style="width: 75%;">
-				
-				<table>
-					<tbody class="align-middle">
-						<tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
-						   
-							<td class="align-middle" style="padding-left: 0.2em;">
-							   
-								<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
-									
-									<label class="fs-4 text-start fw-normal">
-										{% if params.doc.unit.name_dop|length > 0 %}
-											{{params.doc.unit.name_dop}}
-										{% else %}
-											{{params.doc.unit.name}}
-										{% endif %}
-									</label>
-									{% if params.doc.unit.city|length > 0  %}
-										<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span> г. {{params.doc.unit.city}}</label>
-									{% endif %}
+          <div class="row g-2 small text-secondary">
+            <div class="col-6">
+              <span>Год:</span> <strong class="text-dark">{{ params.doc.cars.year|default:"—" }} г.</strong>
+            </div>
+            <div class="col-6">
+              <span>Пробег:</span> <strong class="text-dark">{{ params.doc.run|floatformat:"0g" }} км</strong>
+            </div>
+          </div>
+        </div>
 
-									{% if params.doc.unit.phone|length > 0  %}
-										<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-mobile"></span> {{params.doc.unit.phone}}</label>
-									{% endif %}
+        <div class="row g-2 small">
+          <div class="col-12">
+            <div class="field-label"><i class="bi bi-person"></i> Клиент</div>
+            <div class="field-value-secondary text-truncate">{{ params.doc.customer|default:params.doc.clientName|default:"—" }}</div>
+          </div>
+          <div class="col-12">
+            <div class="field-label"><i class="bi bi-geo-alt"></i> ДЦ / Подразделение</div>
+            <div class="field-value-secondary">{{ params.doc.unit.name|default:"—" }}</div>
+          </div>
+          <div class="col-12">
+            <div class="field-label"><i class="bi bi-person-badge"></i> Мастер-консультант</div>
+            <div class="field-value-secondary">{{ params.doc.master|default:"—" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-									{% if params.doc.unit.email|length > 0  %}
-										<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-paper-plane"></span> {{params.doc.unit.email}}</label>
-									{% endif %}
-									
-								</div>
+  <!-- Медиа-галерея (Фото и Видео МКУ) -->
+  {% if params.recomendation.recomendation_files_mcu_count > 0 %}
+    <div class="portal-rec-panel">
+      <div class="portal-rec-panel-header">
+        <h3 class="portal-rec-panel-title">
+          <i class="bi bi-camera text-primary"></i> Фото и видео материалы МКУ
+        </h3>
+        <span class="badge bg-light text-dark border">
+          Файлов: {{ params.recomendation.recomendation_files_mcu_count }}
+        </span>
+      </div>
 
-							</td>
+      <div class="gallery-grid">
+        {% for rec_file in params.recomendation.recomendation_mcu_files %}
+          <div class="gallery-card">
+            {% if rec_file.is_video %}
+              <div class="video-container">
+                <iframe src="{{ rec_file.file.url }}" allowfullscreen></iframe>
+              </div>
+              <div class="gallery-card-badge">
+                <i class="bi bi-camera-video-fill"></i> Видео
+              </div>
+            {% else %}
+              <img src="{{ rec_file.file.url }}" class="gallery-card-preview" alt="Фото рекомендации МКУ" loading="lazy" onclick="openLightboxModal('{{ rec_file.file.url }}')">
+              <div class="gallery-card-badge">
+                <i class="bi bi-image-fill"></i> Фото
+              </div>
+            {% endif %}
+            <div class="gallery-card-footer">
+              <span class="small text-muted">Файл №{{ forloop.counter }}</span>
+              <a href="{{ rec_file.file.url }}" target="_blank" rel="noopener">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Открыть
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
-							{% if params.doc.unit.main_photo %}
-								<td class="align-middle col-5 bg-filter" >
-									<div>
-										<img src="{{params.doc.unit.main_photo.url}}" style="border-radius: 0.2em;"> 
-									</div> 
-								</td>  
-							{% else %}
-								<td class="align-middle col-4 bg-image">
-								</td>  
-							{% endif %}
-							
-							
-
-						</tr>
-					</tbody>
-				</table>
-
-				<hr style="width: 75%;">
-
-				<table>
-					<tbody class="align-middle">
-						<tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
-						   
-							<td class="align-middle" style="padding-left: 0.2em;">
-							   
-								<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
-									
-									<label class="fs-4 text-start fw-normal">
-									   {{params.doc.master}}
-									</label>
-
-									<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span>{{params.doc.master.post}}</label>
-									
-								</div>
-
-							</td>
-
-							{% if params.doc.master.main_photo %}
-								<td class="align-middle col-5 bg-filter" >
-									<div>
-										<img src="{{params.doc.master.main_photo.url}}" style="border-radius: 0.2em; max-height: 350px;"> 
-									</div>
-								</td>  
-							{% else %}
-								<td class="align-middle col-4 bg-image">
-								</td>  
-							{% endif %}
-							
-							
-
-						</tr>
-					</tbody>
-				</table>
-
-				<hr style="width: 75%;">
-
-
-			</div>
-
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-			</div>
-
-		</div>
-		</div>
-	</div>
-
-
-
-	<div class="card-body">
-        
-		<div class="row align-items-center">
-			<div class="col-sm-3 text-center">
-				
-				{% if params.recomendation.customerStatus == 0 %}
-					<span class="icon-mbri-question fs-4"></span> 
-					<br>
-					Неактивна 
-				{% elif params.recomendation.customerStatus == 1 %}
-					<span class="icon-mbri-timer fs-4"></span> 
-					<br>
-				 	На согласовании 
-				{% elif params.recomendation.customerStatus == 2 %} 
-					<span class="icon-mbri-success fs-4"></span> 
-					<br>
-					Согласовано 
-				{% else %} 
-					<span class="icon-mbri-close fs-4"></span>
-					<br> 
-					Отклонена 
-				{% endif %}
-
-			</div>
-			
-			<div class="col-sm">
-				<label class="fs-6 text-start fw-normal">
-					Наименование: 
-				</label> 
-				<br>
-				<label class="fs-5 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary">{{params.recomendation.name}}</span>
-				</label>
-				{% if params.recomendation.dataTimeCutomerEvent != None %}
-					
-					<br>
-					<label class="fs-6 text-start fw-normal">
-						Дата обработки клиентом: 
-					</label> 
-					<br>
-					<label class="fs-5 text-start fw-normal">
-						<span class="icon-mbri-minus text-secondary">{{params.recomendation.dataTimeCutomerEvent}}</span>
-					</label>
-					
-				{% endif %}
-					
-			</div>
-
-		</div>
-
-		<hr style="width: 75%;">
-		
-		{% if params.recomendation.recomendation_files_mcu_count > 0 %}
-			
-			<div class="gallery-container">
-				{% for recomendation_object_mcu in params.recomendation.recomendation_mcu_files %}
-						
-					{% if recomendation_object_mcu.is_video %}
-						<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
-							<div class="video-responsive">
-								<iframe width="auto" src="{{recomendation_object_mcu.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
-							</div>
-						</div>
-					{% else %}
-						<div class="gallery-item" data-index="{{forloop.counter}}">
-							<img src="{{recomendation_object_mcu.file.url}}">
-						</div>
-					{% endif %}
-
-				{% endfor %}
-			</div>
-
-			<hr style="width: 75%;">	
-			
-		{% endif %}
-		
-	</div>
-		  
-		  
-	<h6>{{params.url}}</h6>
-
+  <!-- Подвал страницы с URL -->
+  <div class="text-center mt-4 text-muted small">
+    <span>Постоянный URL: </span>
+    <a href="{{ params.url }}" class="text-secondary">{{ params.url }}</a>
+  </div>
 </div>
-	
 
+<!-- ==========================================================================
+     Модальное окно: Подробная информация по заказ-наряду
+     ========================================================================== -->
+<div class="modal fade" id="znDetailsModal" tabindex="-1" aria-labelledby="znDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold text-dark" id="znDetailsModalLabel">
+          <i class="bi bi-file-earmark-text text-primary me-1"></i> Заказ-наряд № {{ params.doc.nomer }} от {{ params.doc.dataTime|date:"d.m.Y H:i" }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body p-4">
+        <!-- Сетка основных реквизитов -->
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="field-label">Автомобиль</div>
+            <div class="field-value">{{ params.doc.cars.mark }} {{ params.doc.cars.model }}</div>
+            <div class="small text-muted">VIN: {{ params.doc.cars.vin|default:"—" }}</div>
+            <div class="small text-muted">Год: {{ params.doc.cars.year|default:"—" }} г. · Пробег: {{ params.doc.run|floatformat:"0g" }} км</div>
+          </div>
 
-<script language="JavaScript">
-	function change_link(){
-		link_1= document.getElementById("unit");
-		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
-	}
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="field-label">Клиент</div>
+            <div class="field-value">{{ params.doc.customer|default:params.doc.clientName|default:"—" }}</div>
+          </div>
+
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="field-label">Вид ремонта</div>
+            <div class="field-value">{{ params.doc.typeRemont|default:"Не указан" }}</div>
+          </div>
+
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="field-label">Дилерский центр</div>
+            <div class="field-value">{{ params.doc.unit.name|default:"—" }}</div>
+            {% if params.doc.unit.city %}
+              <div class="small text-muted">г. {{ params.doc.unit.city }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if params.doc.customerWords %}
+          <div class="mb-4">
+            <div class="field-label">Заявка со слов клиента</div>
+            <div class="p-3 bg-light rounded-3 small">
+              {{ params.doc.customerWords }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Состав заказ-наряда если есть -->
+        {% if params.doc.works or params.doc.products %}
+          <h6 class="fw-bold text-dark mb-2"><i class="bi bi-list-check me-1"></i> Состав заказ-наряда</h6>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm table-portal">
+              <thead>
+                <tr>
+                  <th>Позиция</th>
+                  <th class="text-center" style="width: 100px;">Кол-во</th>
+                  <th class="num-cell" style="width: 140px;">Сумма</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for work in params.doc.works %}
+                  <tr>
+                    <td><span class="badge bg-light text-secondary border me-1">Работа</span> {{ work.work }}</td>
+                    <td class="text-center">{{ work.quantity|floatformat:"2g" }}</td>
+                    <td class="num-cell">{{ work.amount|floatformat:"2g" }} ₽</td>
+                  </tr>
+                {% endfor %}
+                {% for product in params.doc.products %}
+                  <tr>
+                    <td><span class="badge bg-light text-secondary border me-1">Товар</span> {{ product.product }}</td>
+                    <td class="text-center">{{ product.quantity|floatformat:"2g" }}</td>
+                    <td class="num-cell">{{ product.amount|floatformat:"2g" }} ₽</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2" class="text-end">Итого по ЗН:</td>
+                  <td class="num-cell text-success fs-6">{{ params.doc.amount|floatformat:"2g" }} ₽</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        {% endif %}
+
+        <!-- Карточка ДЦ с фото -->
+        <div class="row g-3 mb-3">
+          {% if params.doc.unit.main_photo %}
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="field-label mb-2"><i class="bi bi-building"></i> Подразделение</div>
+                <div class="d-flex gap-3 align-items-center">
+                  <img src="{{ params.doc.unit.main_photo.url }}" class="rounded" style="width: 120px; height: 80px; object-fit: cover;" alt="ДЦ">
+                  <div>
+                    <div class="fw-bold">{{ params.doc.unit.name_dop|default:params.doc.unit.name }}</div>
+                    <div class="small text-muted">{{ params.doc.unit.city }} {{ params.doc.unit.phone }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if params.doc.master.main_photo %}
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="field-label mb-2"><i class="bi bi-person-badge"></i> Мастер-консультант</div>
+                <div class="d-flex gap-3 align-items-center">
+                  <img src="{{ params.doc.master.main_photo.url }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;" alt="Мастер">
+                  <div>
+                    <div class="fw-bold">{{ params.doc.master }}</div>
+                    <div class="small text-muted">{{ params.doc.master.post }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     Модальное окно: Просмотр фото (Lightbox)
+     ========================================================================== -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body p-0 text-center position-relative">
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Закрыть" style="z-index: 10;"></button>
+        <img id="lightboxImage" src="" class="img-fluid rounded-3 shadow-lg" style="max-height: 85vh; object-fit: contain;" alt="Фото">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Всплывающее уведомление (Toast) -->
+<div id="copyToast" class="copy-toast">
+  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+  <span>Ссылка на рекомендацию скопирована в буфер обмена!</span>
+</div>
+
+<script>
+  function copyCurrentUrl() {
+    var url = window.location.href;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(showCopyToast);
+    } else {
+      var tempInput = document.createElement("input");
+      tempInput.value = url;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      showCopyToast();
+    }
+  }
+
+  function showCopyToast() {
+    var toast = document.getElementById("copyToast");
+    if (!toast) return;
+    toast.classList.add("show");
+    setTimeout(function() {
+      toast.classList.remove("show");
+    }, 2800);
+  }
+
+  function openLightboxModal(src) {
+    var img = document.getElementById("lightboxImage");
+    if (img) {
+      img.src = src;
+      var modalEl = document.getElementById("lightboxModal");
+      var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+  }
 </script>
-
-<script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
-	}
-	
-</script>
-
-
 {% endblock %}

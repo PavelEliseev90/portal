@@ -1,101 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — Рекомендации выкупа {% endblock %}
 {% block title_navbar %} — Рекомендации выкупа {% endblock %}
 
 {% block head %}
-<style>
-  .aav-rec-hero {
-    border-radius: 14px;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    background: linear-gradient(135deg, #f0fdf4 0%, #fff 45%, #eef4fb 100%);
-    padding: 1.25rem 1.35rem;
-    margin-bottom: 1.25rem;
-  }
-  .aav-rec-hero h2 { margin: 0 0 0.35rem; font-weight: 650; color: #002a5a; }
-  .aav-score {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 3rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 0.82rem;
-  }
-  .aav-score-high { background: #dcfce7; color: #166534; }
-  .aav-score-mid { background: #fef9c3; color: #854d0e; }
-  .aav-score-low { background: #fee2e2; color: #991b1b; }
-  .aav-stage-bar {
-    display: flex;
-    height: 8px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #e2e8f0;
-    min-width: 90px;
-  }
-  .aav-stage-bar span { display: block; height: 100%; }
-  .aav-stage-test { background: #22c55e; }
-  .aav-stage-rdo { background: #3b82f6; }
-  .aav-stage-kor { background: #f59e0b; }
-  .aav-stage-txt { background: #ef4444; }
-  .aav-rec-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1rem;
-  }
-  .aav-rec-card {
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    border-radius: 1rem;
-    background: #fff;
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.06);
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  .aav-rec-card:hover { color: inherit; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 42, 90, 0.1); }
-  .aav-rec-card-photo {
-    aspect-ratio: 4/3;
-    background: #e8eef5;
-    position: relative;
-    overflow: hidden;
-  }
-  .aav-rec-card-photo img { width: 100%; height: 100%; object-fit: cover; }
-  .aav-rec-card-body { padding: 0.85rem 1rem; }
-  .aav-rec-match {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 0.2rem 0.5rem;
-    border-radius: 999px;
-    background: rgba(255,255,255,.92);
-    color: #166534;
-    border: 1px solid #bbf7d0;
-  }
-  .aav-top-card {
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    border-radius: 0.85rem;
-    padding: 0.85rem 1rem;
-    background: #fff;
-    height: 100%;
-  }
-  .aav-top-rank {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 999px;
-    background: #002a5a;
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 700;
-  }
-</style>
 {% endblock %}
 
 {% block content %}

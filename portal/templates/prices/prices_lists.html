@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — Прайс-листы {% endblock %}
@@ -6,61 +6,6 @@
 
 {% block content %}
 {% include 'asp/partials/asp_report_styles.html' %}
-
-<style>
-  /* Дополнительные стили для реестра прайс-листов в концепции ASP */
-  .badge-status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.76rem;
-    font-weight: 600;
-    padding: 0.25rem 0.65rem;
-    border-radius: 9999px;
-    white-space: nowrap;
-  }
-  .badge-status-confirmed {
-    background: #dcfce7;
-    color: #15803d;
-    border: 1px solid #bbf7d0;
-  }
-  .badge-status-opened {
-    background: #fef3c7;
-    color: #b45309;
-    border: 1px solid #fde68a;
-  }
-  .badge-status-error {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-  }
-  .badge-status-unread {
-    background: #f1f5f9;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-  }
-  .kp-quick-btn {
-    font-size: 0.75rem;
-    padding: 0.2rem 0.65rem;
-    border-radius: 9999px;
-  }
-  .progress-sm {
-    height: 6px;
-    border-radius: 9999px;
-    background-color: #e2e8f0;
-    overflow: hidden;
-  }
-  .table-asp .pos-progress-cell {
-    min-width: 140px;
-  }
-  .file-name-cell {
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-</style>
-
 <div class="asp-rep" data-report-key="prices_lists">
   <!-- Заголовок страницы -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">

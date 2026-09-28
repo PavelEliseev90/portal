@@ -1,4 +1,4 @@
-{% extends "base_web.html" %}
+﻿{% extends "base_web.html" %}
 {% load custom_template_tags %}
 
 {% block title %} - Классифайды - {% if params.config %}Редактирование{% else %}Создание{% endif %} настройки {% endblock %}
@@ -319,23 +319,6 @@
     </form>
   </div>
 </div>
-
-<style>
-.docs-zn-page {
-  background: #f4f7fb;
-  min-height: 100vh;
-  padding: 1.5rem 0;
-}
-
-.card {
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
-}
-</style>
-
 <script>
 // Функции для работы с множественным выбором фильтров
 (function() {

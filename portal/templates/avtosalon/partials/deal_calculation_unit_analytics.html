@@ -1,4 +1,4 @@
-{% if params.analytics.unit_name %}
+﻿{% if params.analytics.unit_name %}
 <div class="deal-section">
   <h6 class="deal-section-title mb-0">
     <a class="h6 d-flex align-items-center justify-content-between text-reset text-decoration-none"
@@ -45,52 +45,7 @@
 
     {% with cmp=params.analytics.sales_comparison %}
     {% if cmp.columns %}
-    <style>
-      .deal-sales-compare-wrap {
-        overflow-x: auto;
-        max-width: 100%;
-      }
-      .deal-sales-compare-table .deal-sales-sticky-1,
-      .deal-sales-compare-table .deal-sales-sticky-2 {
-        position: sticky;
-        z-index: 2;
-        background-color: #fff;
-      }
-      .deal-sales-compare-table thead .deal-sales-sticky-1 {
-        z-index: 4;
-        background-color: #f8f9fa;
-      }
-      .deal-sales-compare-table thead .deal-sales-sticky-2 {
-        z-index: 4;
-      }
-      .deal-sales-compare-table .deal-sales-sticky-1 {
-        left: 0;
-        min-width: 12rem;
-        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
-      }
-      .deal-sales-compare-table .deal-sales-sticky-2 {
-        left: 12rem;
-        min-width: 10rem;
-        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
-      }
-      .deal-sales-compare-table thead .deal-sales-sticky-2.table-primary {
-        background-color: #0d6efd;
-        color: #fff;
-      }
-      .deal-sales-compare-table tbody tr:hover .deal-sales-sticky-1,
-      .deal-sales-compare-table tbody tr:hover .deal-sales-sticky-2:not(.table-success):not(.table-danger) {
-        background-color: #f8f9fa;
-      }
-      .deal-sales-compare-table tbody .deal-sales-sticky-2.table-success,
-      .deal-sales-compare-table tbody .deal-sales-sticky-1.table-success {
-        background-color: #d1e7dd;
-      }
-      .deal-sales-compare-table tbody .deal-sales-sticky-2.table-danger,
-      .deal-sales-compare-table tbody .deal-sales-sticky-1.table-danger {
-        background-color: #f8d7da;
-      }
-    </style>
-    <div class="deal-sales-compare-wrap">
+<div class="deal-sales-compare-wrap">
       <div class="table-responsive portal-radius">
         <table class="table table-sm table-bordered table-hover align-middle mb-0 deal-sales-compare-table">
           <thead >

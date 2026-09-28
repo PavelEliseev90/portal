@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load l10n %}
 {% load custom_template_tags %}
 
@@ -6,40 +6,6 @@
 {% block title_navbar %} — Калькулятор выкупа {% endblock %}
 
 {% block content %}
-<style>
-  .pc-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
-  .pc-page h2 { font-size: 1.55rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
-  .pc-page .lead { color: #6c7a92; margin-bottom: 1.25rem; font-size: .95rem; }
-  .pc-panel, .pc-badge {
-    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
-    box-shadow: 0 14px 32px rgba(0,23,61,.06);
-  }
-  .pc-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
-  .pc-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 .85rem; }
-  .pc-hint { font-size: .82rem; color: #6c7a92; }
-  .pc-badge { padding: .9rem 1rem; height: 100%; }
-  .pc-badge .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: #8ea1ba; }
-  .pc-badge .pair { font-size: 1.05rem; font-weight: 650; color: #002a5a; margin: .2rem 0; font-variant-numeric: tabular-nums; }
-  .pc-badge .delta { font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .delta-pos { color: #0f9d58; }
-  .delta-neg { color: #dc2626; }
-  .delta-zero { color: #94a3b8; }
-  .pc-sep { color: #94a3b8; margin: 0 .25rem; }
-  .table-pc th { white-space: nowrap; font-size: .75rem; color: #5b6b82; }
-  .table-pc td { font-size: .82rem; vertical-align: middle; font-variant-numeric: tabular-nums; }
-  .table-pc .pair { white-space: nowrap; }
-  .table-pc .pc-cost-break { white-space: normal; line-height: 1.35; max-width: 18rem; margin-left: auto; }
-  .table-pc .pc-est-cell { min-width: 9rem; font-variant-numeric: normal; }
-  .table-pc .pc-est-name { font-weight: 600; color: #002a5a; }
-  details.pc-adv > summary {
-    cursor: pointer; font-weight: 600; color: #002a5a; margin-bottom: .75rem; list-style: none;
-  }
-  details.pc-adv > summary::-webkit-details-marker { display: none; }
-  .lever-changed { background: #fffbeb; }
-  .btn-calc { border-radius: 999px; padding: .45rem 1.2rem; }
-  .form-label { font-size: .78rem; color: #5b6b82; }
-</style>
-
 <div class="pc-page">
   <h2>Калькулятор выкупа</h2>
   <p class="lead">{{ params.hint }}</p>

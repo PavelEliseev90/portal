@@ -1,18 +1,9 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 
 {% block title %} — Очередь КВП в 1С {% endblock %}
 {% block title_navbar %} — Очередь КВП {% endblock %}
 
 {% block content %}
-<style>
-  .kvp-send-ok { background: #e7f6ed; }
-  .kvp-send-fail { background: #fde8e8; }
-  .kvp-resp {
-    white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace;
-    font-size: 0.72rem; max-height: 8rem; overflow: auto; margin: 0.25rem 0 0;
-    padding: 0.35rem 0.45rem; border-radius: 0.35rem; background: #f6f8fa;
-  }
-</style>
 <div class="container-fluid py-3">
 	<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
 		<div>

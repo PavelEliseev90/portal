@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 
 {% load custom_template_tags %}
 {% load static %}
@@ -11,26 +11,6 @@
 
 {% block head %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'css/auction-floor.css' %}?v={% now "U" %}">
-    <style>
-        html:has(.auction-floor),
-        body:has(.auction-floor),
-        html.has-auction-floor,
-        body.has-auction-floor,
-        body:has(.auction-floor) #content,
-        body:has(.auction-floor) main#content,
-        body.has-auction-floor #content,
-        body.has-auction-floor main#content {
-            background: #f8fafc !important;
-            background-color: #f8fafc !important;
-            color: #111827 !important;
-            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-        }
-        body:has(.auction-floor)::before,
-        body:has(.auction-floor)::after {
-            display: none !important;
-        }
-    </style>
 {% endblock %}
 
 {% block content %}

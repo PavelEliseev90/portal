@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 
 {% load custom_template_tags %}
 {% load static %}
@@ -12,53 +12,7 @@
 {% block title_navbar %} - Лот аукциона {% endblock %}
 
 {% block head %}
-	{{ block.super }}
-	<link rel="stylesheet" href="{% static 'css/auction-doc.css' %}?v={% now "U" %}">
-	<style>
-		html:has(.auction-doc),
-		body:has(.auction-doc),
-		html.has-auction-doc,
-		body.has-auction-doc,
-		body:has(.auction-doc) #content,
-		body:has(.auction-doc) main#content,
-		body.has-auction-doc #content,
-		body.has-auction-doc main#content {
-			background: #f8fafc !important;
-			background-color: #f8fafc !important;
-			color: #111827 !important;
-			font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-		}
-		body:has(.auction-doc)::after,
-		body.has-auction-doc::after {
-			display: none !important;
-			content: none !important;
-			opacity: 0 !important;
-			visibility: hidden !important;
-		}
-
-		/* Preserve default sidebar menu scrollbar */
-		#sidebarMenu,
-		#sidebarMenu *,
-		#menu,
-		#menu *,
-		.sidebar,
-		.sidebar * {
-			scrollbar-width: auto !important;
-			scrollbar-color: auto !important;
-		}
-	</style>
-	<script>
-		document.documentElement.classList.add('has-auction-doc');
-		document.documentElement.style.backgroundColor = '#f8fafc';
-		if (document.body) {
-			document.body.classList.add('has-auction-doc');
-			document.body.style.backgroundColor = '#f8fafc';
-		}
-		document.addEventListener('DOMContentLoaded', function() {
-			document.body.classList.add('has-auction-doc');
-			document.body.style.backgroundColor = '#f8fafc';
-		});
-	</script>
+    {{ block.super }}
 {% endblock %}
 
 {% block content %}

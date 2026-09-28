@@ -1,106 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — Аналитика аукциона Авито {% endblock %}
 {% block title_navbar %} — Аналитика аукциона {% endblock %}
 
 {% block head %}
-<style>
-  .aav-an-hero {
-    border-radius: 14px;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    background: linear-gradient(135deg, #eef4fb 0%, #fff 48%, #f8fafc 100%);
-    padding: 1.25rem 1.35rem;
-    margin-bottom: 1.25rem;
-  }
-  .aav-an-hero h2 { margin: 0 0 0.35rem; font-weight: 650; color: #002a5a; }
-  .aav-kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.75rem;
-  }
-  .aav-kpi {
-    border-radius: 12px;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    background: #fff;
-    padding: 0.85rem 1rem;
-  }
-  .aav-kpi .label {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #8ea1ba;
-    margin-bottom: 0.2rem;
-  }
-  .aav-kpi .value { font-size: 1.45rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
-  .aav-kpi .hint { font-size: 0.78rem; color: #6c7a92; margin-top: 0.15rem; }
-  .aav-counter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.65rem;
-  }
-  .aav-counter {
-    border-radius: 12px;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    padding: 0.75rem 0.9rem;
-    background: #f8fafc;
-  }
-  a.aav-counter {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    transition: box-shadow .15s ease, transform .15s ease;
-    cursor: pointer;
-  }
-  a.aav-counter:hover {
-    box-shadow: 0 4px 14px rgba(0, 42, 90, 0.12);
-    transform: translateY(-1px);
-  }
-  .aav-counter.won { background: #ecfdf5; border-color: #bbf7d0; }
-  .aav-counter.lost { background: #fef2f2; border-color: #fecaca; }
-  .aav-counter.waiting_seller { background: #fff7ed; border-color: #fed7aa; }
-  .aav-counter.not_taken { background: #fef3c7; border-color: #fcd34d; }
-  .aav-counter.no_selection,
-  .aav-counter.not_redeemed,
-  .aav-counter.we_refused,
-  .aav-counter.canceled { background: #f1f5f9; border-color: #e2e8f0; }
-  .aav-counter .c-label { font-size: 0.8rem; color: #475569; }
-  .aav-counter .c-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; }
-  .aav-counter .c-pct { font-size: 0.78rem; color: #6c7a92; margin-top: 0.1rem; }
-  .aav-group {
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    margin-bottom: 0.75rem;
-    background: #fff;
-  }
-  .aav-group h6 { margin: 0 0 0.5rem; color: #002a5a; font-weight: 650; }
-  .aav-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.35rem 0;
-    font-size: 0.85rem;
-  }
-  .aav-bar-track {
-    flex: 1;
-    height: 8px;
-    border-radius: 999px;
-    background: #e2e8f0;
-    overflow: hidden;
-  }
-  .aav-bar-fill {
-    height: 100%;
-    background: #00509d;
-    border-radius: 999px;
-  }
-  .aav-bar-fill.filters { background: #f59e0b; }
-  .aav-bar-fill.economics { background: #ef4444; }
-  .aav-bar-fill.already { background: #64748b; }
-  .aav-bar-fill.system { background: #94a3b8; }
-  .aav-table { font-size: 0.88rem; }
-  .aav-table th { color: #8ea1ba; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
-</style>
 {% endblock %}
 
 {% block content %}
