@@ -1,33 +1,9 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load static %}
 
 {% block title %} - Сравнение затрат оценки {% endblock %}
 
 {% block content %}
-<style>
-  .report-page { padding: 1rem 1.5rem 2.5rem; }
-  .report-header h2 { font-size: 1.5rem; font-weight: 700; color: #002a5a; margin-bottom: 0.25rem; }
-  .report-header p { color: #6c7a92; margin-bottom: 1.25rem; }
-  .report-filter {
-    background: #fff; border-radius: 1.2rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
-    padding: 1.25rem; margin-bottom: 1.25rem;
-  }
-  .panel {
-    background: #fff; border-radius: 1.2rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
-    padding: 1.25rem;
-  }
-  .table-sticky thead th {
-    position: sticky; top: 0; background: #f8f9fc; z-index: 1; white-space: nowrap;
-  }
-  .diff-positive { color: #0f9d58; font-weight: 600; }
-  .diff-negative { color: #d93025; font-weight: 600; }
-  .diff-zero { color: #6c7a92; }
-</style>
-
 <div class="report-page">
   <div class="report-header">
     <h2>Сравнение затрат (подготовка / слесарка / кузов)</h2>

@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} - Единый центр оценки онлайн {% endblock %}
@@ -204,56 +204,6 @@ z-index: 1044;">
 <div id="showmore-triger" data-page="1" data-max="15">
 	<img src="/media/loading.gif" alt="">
 </div>
-
-<style>
-  /* Animated loading plate for infinite-scroll trigger */
-  #showmore-triger{
-    position: relative;
-    overflow: hidden;
-    text-align: center;
-    padding: 10px;
-    background: #00529650;
-    border-radius: 0.5rem;
-    min-height: 46px;
-  }
-  #showmore-triger img{
-    position: relative;
-    z-index: 2;
-  }
-  #showmore-triger::after{
-    content: "";
-    position: absolute;
-    top: -40%;
-    left: -60%;
-    width: 55%;
-    height: 180%;
-    transform: rotate(18deg);
-    background: linear-gradient(
-      90deg,
-      rgba(255,255,255,0) 0%,
-      rgba(255,255,255,.55) 50%,
-      rgba(255,255,255,0) 100%
-    );
-    z-index: 3;
-    pointer-events: none;
-    opacity: 0; /* включаем только во время загрузки */
-  }
-  #showmore-triger.is-loading::after{
-    opacity: 1;
-    animation: showmoreShimmer 1.05s ease-in-out infinite;
-  }
-  @keyframes showmoreShimmer{
-    0%   { left: -70%; opacity: .0; }
-    15%  { opacity: .9; }
-    50%  { opacity: .55; }
-    85%  { opacity: .9; }
-    100% { left: 120%; opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce){
-    #showmore-triger.is-loading::after{ animation: none; }
-  }
-</style>
-
 <audio id="notif" src="{% include 'chats/notif_sound_src.html' with channel='estimation' %}" preload="auto"></audio>
 
    <script type="text/javascript">

@@ -1,25 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — Управление дисконтом КМ {% endblock %}
 {% block title_navbar %} — Дисконт КМ {% endblock %}
 
 {% block content %}
-<style>
-.director-filter-label {
-  font-size: 0.85rem;
-  letter-spacing: 0.18em;
-  color: #8ea1ba;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-.director-search-input {
-  border-radius: 0.95rem;
-  border: 1px solid rgba(0, 42, 90, 0.15);
-}
-.discount-rule-active > td:not(:last-child) { color: #198754 !important; }
-.discount-rule-inactive > td:not(:last-child) { color: #dc3545 !important; }
-</style>
 <div class="portal-page">
     <div class="container-fluid py-3">
         <p class="mb-2">

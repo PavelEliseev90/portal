@@ -1,4 +1,4 @@
-{% extends 'base_web_board_new.html' %}
+﻿{% extends 'base_web_board_new.html' %}
 
 {% block url %} {% endblock %} 
 
@@ -7,104 +7,6 @@
 {% block title %} Добро пожаловать в {{params.board.name_title}} {% endblock %}
   
 {% block head %}
-
-
-
-<style>
-  @font-face {
-    font-family: "Haval-Medium";
-    src: url('/../static/fonts/Haval-Medium.eot') format('embedded-opentype'),
-		 url('/../static/fonts/Haval-Medium.woff2') format('woff2'),
-		 url('/../static/fonts/Haval-Medium.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Haval-Light";
-    src: url('/../static/fonts/Haval-Light.eot') format('embedded-opentype'),
-		 url('/../static/fonts/Haval-Light.woff2') format('woff2'),
-		 url('/../static/fonts/Haval-Light.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "TTWellingtons-Regular";
-    src: url('/../static/fonts/TTWellingtons-Regular.eot') format('embedded-opentype'),
-		 url('/../static/fonts/TTWellingtons-Regular.woff2') format('woff2'),
-		 url('/../static/fonts/TTWellingtons-Regular.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Haval-MediumSlanted";
-    src: url('/../static/fonts/Haval-MediumSlanted.eot') format('embedded-opentype'),
-		 url('/../static/fonts/Haval-MediumSlanted.woff2') format('woff2'),
-		 url('/../static/fonts/Haval-MediumSlanted.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Haval-Regular";
-    src: url('/../static/fonts/Haval-Regular.eot') format('embedded-opentype'),
-		 url('/../static/fonts/Haval-Regular.woff2') format('woff2'),
-		 url('/../static/fonts/Haval-Regular.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-  .start{
-  
-    width: 26px;
-    min-height: 26px;
-    -webkit-clip-path: polygon( 0 100%, 100% 100%, 100% 25%, 75% 0, 0 0);
-    clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 25%, 75% 0);
-    background: lightblue;
-  }
-
-  body {
-   font-family: Haval-Medium, 'Haval-Medium', normal;
-  }
-
-  div {
-    padding: 0;
-    margin: 0; 
-  }
-
-  .rows {
-    margin: 0;
-    padding: 0;
-  }
-
-  .d10 {
-    width: 0; 
-    height: 0;
-    clip-path: polygon(0 100%, 100% 0, 100% 100%, 0 100%);
-    background: white;
-  }
-
-  .d12 {
-    margin-left: 20px; 
-    width: 26px; 
-    height: 26px;
-    transform: skew(145deg);
-    background: white;
-    
-  }
-
-  .d13 {
-  margin-left: 10px; 
-  width: 20px; 
-  height: 28px;
-  transform: skew(145deg);
-  background: #44b8b6;
-}
-
- </style>
-
 <script language="JavaScript">
    // clip-path: polygon(0 100%, 100% 0, 100% 100%, 0 100%);
   function zero_first_format(value)

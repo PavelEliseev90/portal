@@ -1,32 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load l10n %}
 
 {% block title %} — Запросы повышения · детально {% endblock %}
 {% block title_navbar %} — Повышения {% endblock %}
 
 {% block content %}
-<style>
-  .zg-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
-  .zg-page h2 { font-size: 1.45rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
-  .zg-page .lead { color: #6c7a92; margin-bottom: 1rem; font-size: .95rem; }
-  .zg-panel, .zg-metric {
-    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
-    box-shadow: 0 14px 32px rgba(0,23,61,.06);
-  }
-  .zg-metric { padding: 1rem 1.15rem; height: 100%; }
-  .zg-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
-  .zg-metric .v { font-size: 1.5rem; font-weight: 650; color: #002a5a; }
-  .zg-metric .s { color: #6c7a92; font-size: .85rem; }
-  .zg-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
-  .pill {
-    display: inline-block; padding: .15rem .55rem; border-radius: 999px;
-    background: #eef2ff; color: #3730a3; font-size: .8rem; font-weight: 600;
-  }
-  .table-zg td, .table-zg th { font-size: .86rem; vertical-align: middle; }
-  .delta-pos { color: #dc2626; font-weight: 600; }
-  .comment-cell { max-width: 280px; white-space: normal; color: #64748b; font-size: .8rem; }
-</style>
-
 <div class="zg-page">
   <a href="{{ params.back_url }}" class="btn btn-sm btn-outline-secondary mb-3">← К сводке</a>
 
