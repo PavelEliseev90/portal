@@ -2,7 +2,7 @@
 {% load l10n %}
 
 {% block title %} — {{ params.report_title }} {% endblock %}
-{% block title_navbar %} — Заказ-наряды: отчёт по расширениям {% endblock %}
+{% block title_navbar %} — {{ params.report_title }} {% endblock %}
 
 {% block content %}
 {% include 'asp/partials/asp_report_styles.html' %}
@@ -89,7 +89,7 @@
       <div class="asp-rep-metric">
         <div class="t">Всего ЗН</div>
         <div class="v">{{ params.totals.zn_count_all|floatformat:"0g" }}</div>
-        <div class="s">закрытые ЗН (тизер)</div>
+        <div class="s">закрытые ЗН{% if params.report_type == 'mcu' %} (МКУ){% else %} (тизер){% endif %}</div>
       </div>
     </div>
     <div class="col-6 col-md-3 col-xl">
@@ -454,7 +454,7 @@
         loadingRow.innerHTML = '<td colspan="14" class="text-center py-3 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Загрузка рекомендаций...</td>';
         headerRow.parentNode.insertBefore(loadingRow, headerRow.nextSibling);
 
-        const url = `/docs_zn_report_tizer/?ajax=details&id=${encodeURIComponent(id)}&group_type=${encodeURIComponent(groupType)}&date_start=${encodeURIComponent(dateStart)}&date_end=${encodeURIComponent(dateEnd)}`;
+        const url = `${window.location.pathname}?ajax=details&id=${encodeURIComponent(id)}&group_type=${encodeURIComponent(groupType)}&date_start=${encodeURIComponent(dateStart)}&date_end=${encodeURIComponent(dateEnd)}`;
 
         fetch(url)
           .then(function(resp) { return resp.json(); })
@@ -484,12 +484,13 @@
               const st1 = rec.status === 1 ? '<span class="badge bg-warning text-dark">1</span>' : '<span class="text-muted small">—</span>';
               const st2 = rec.status === 2 ? '<span class="badge bg-success">1</span>' : '<span class="text-muted small">—</span>';
               const st3 = rec.status === 3 ? '<span class="badge bg-danger">1</span>' : '<span class="text-muted small">—</span>';
+              const recLink = escapeHtml(rec.detail_url || `/docs_recomendation/${rec.id}/`);
 
               tr.innerHTML = `
                 <td></td>
                 <td>
                   ${subText}
-                  <a href="/docs_recomendation/${rec.id}/" target="_blank" rel="noopener" class="rec-link">
+                  <a href="${recLink}" target="_blank" rel="noopener" class="rec-link">
                     № ${escapeHtml(rec.nomer)} / ${escapeHtml(rec.date)} — ${escapeHtml(rec.name)}
                   </a>
                 </td>

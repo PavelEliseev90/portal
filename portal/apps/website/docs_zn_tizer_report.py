@@ -10,7 +10,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from portal.apps.documents.models import DocZN, DoсRecomendation
+from portal.apps.documents.models import DocZN, DoсRecomendation, DoсRecomendationMCU
 from portal.apps.refs.models import RefUnit, RefUnitGroup
 
 
@@ -52,22 +52,34 @@ def get_tizer_report_data(
     unit_group: str = 'yes',
     select_unit_id: str = '',
     select_unit_group_id: str = '',
+    report_type: str = 'tizer',
 ):
     """
     Выполняет быстрый подсчёт статистики за 2 SQL-запроса с агрегацией.
+    Поддерживает обычный тизер (DoсRecomendation + typeRemont__tizer=True)
+    и МКУ (DoсRecomendationMCU + все закрытые DocZN).
     """
     filter_unit_id = int(select_unit_id) if select_unit_id and select_unit_id.isdigit() else None
     filter_group_id = int(select_unit_group_id) if select_unit_group_id and select_unit_group_id.isdigit() else None
 
-    # Базовые запросы
-    zn_qs = DocZN.objects.filter(
-        closed=True,
-        typeRemont__tizer=True,
-        dataTime__gte=date_start_dt,
-        dataTime__lte=date_end_dt,
-    )
+    RecModel = DoсRecomendationMCU if report_type == 'mcu' else DoсRecomendation
 
-    rec_qs = DoсRecomendation.objects.filter(
+    # Базовые запросы
+    if report_type == 'mcu':
+        zn_qs = DocZN.objects.filter(
+            closed=True,
+            dataTime__gte=date_start_dt,
+            dataTime__lte=date_end_dt,
+        )
+    else:
+        zn_qs = DocZN.objects.filter(
+            closed=True,
+            typeRemont__tizer=True,
+            dataTime__gte=date_start_dt,
+            dataTime__lte=date_end_dt,
+        )
+
+    rec_qs = RecModel.objects.filter(
         zn__closed=True,
         zn__dataTime__gte=date_start_dt,
         zn__dataTime__lte=date_end_dt,
@@ -260,10 +272,11 @@ def get_tizer_report_data(
     return table_data, totals
 
 
-def get_ajax_tizer_details(request):
+def get_ajax_tizer_details(request, report_type: str = 'tizer'):
     """
     Возвращает список рекомендаций для раскрывающейся строки подразделения или группы.
     """
+    report_type = request.GET.get('report_type') or report_type
     item_id = request.GET.get('id') or request.GET.get('unit_id') or request.GET.get('unit_group_id')
     group_type = request.GET.get('group_type', 'yes')
     date_start_str = request.GET.get('date_start', '')
@@ -274,7 +287,9 @@ def get_ajax_tizer_details(request):
 
     _, _, date_start_dt, date_end_dt = parse_report_dates(date_start_str, date_end_str)
 
-    recs_qs = DoсRecomendation.objects.filter(
+    RecModel = DoсRecomendationMCU if report_type == 'mcu' else DoсRecomendation
+
+    recs_qs = RecModel.objects.filter(
         zn__closed=True,
         zn__dataTime__gte=date_start_dt,
         zn__dataTime__lte=date_end_dt,
@@ -292,6 +307,8 @@ def get_ajax_tizer_details(request):
 
     recs = recs_qs.select_related('zn', 'zn__unit').order_by('dataTime')[:1000]
 
+    detail_url_prefix = '/docs_recomendation_mcu/' if report_type == 'mcu' else '/docs_recomendation/'
+
     rows = []
     for r in recs:
         zn_nomer = r.zn.nomer if r.zn else '—'
@@ -300,6 +317,7 @@ def get_ajax_tizer_details(request):
 
         rows.append({
             'id': r.id,
+            'detail_url': f"{detail_url_prefix}{r.id}/",
             'nomer': zn_nomer,
             'date': dt_str,
             'name': r.name or '',
@@ -310,13 +328,14 @@ def get_ajax_tizer_details(request):
     return JsonResponse({'ok': True, 'rows': rows, 'total': len(rows)})
 
 
-def export_tizer_report_xlsx(table_data: list, totals: dict, filtr: dict):
+def export_tizer_report_xlsx(table_data: list, totals: dict, filtr: dict, report_type: str = 'tizer'):
     """
     Генерирует Excel-файл выгрузки отчёта по расширениям.
     """
     wb = Workbook()
     ws = wb.active
-    ws.title = 'Отчёт по расширениям'
+    report_label = 'отчёт по расширениям МКУ' if report_type == 'mcu' else 'отчёт по расширениям (тизер)'
+    ws.title = 'Расширения МКУ' if report_type == 'mcu' else 'Расширения тизер'
 
     title_font = Font(name='Calibri', size=14, bold=True, color='002A5A')
     header_font = Font(name='Calibri', size=10, bold=True, color='FFFFFF')
@@ -332,7 +351,7 @@ def export_tizer_report_xlsx(table_data: list, totals: dict, filtr: dict):
     )
 
     # Заголовок
-    ws.append(['Заказ-наряды: отчёт по расширениям (тизер)'])
+    ws.append([f'Заказ-наряды: {report_label}'])
     ws['A1'].font = title_font
 
     period_str = f"Период: с {filtr['date_start']} по {filtr['date_end']} | Группировка: {'Подразделения' if filtr['unit_group'] == 'no' else 'Группы подразделений'}"
@@ -429,7 +448,8 @@ def export_tizer_report_xlsx(table_data: list, totals: dict, filtr: dict):
                 max_len = len(val_str)
         ws.column_dimensions[col_letter].width = max(max_len + 4, 14)
 
+    filename = 'docs_zn_report_tizer_mcu.xlsx' if report_type == 'mcu' else 'docs_zn_report_tizer.xlsx'
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="docs_zn_report_tizer.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
