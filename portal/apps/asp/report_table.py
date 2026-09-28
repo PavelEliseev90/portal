@@ -9,9 +9,9 @@ COLUMNS_COOKIE_PREFIX = 'asp_cols_'
 COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
-    'margin': 'v6',
-    'stock': 'v6',
-    'accepted': 'v4',
+    'margin': 'v7',
+    'stock': 'v7',
+    'accepted': 'v5',
     'deal_calc_approval': 'v3',
 }
 
@@ -103,10 +103,12 @@ def get_report_config(report_key: str) -> dict[str, Any]:
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
-    'date', 'agreement', 'reception_date', 'unit', 'unit_source',
+    'date', 'agreement', 'reception_date', 'unit', 'unit_source', 'status', 'type_sale',
     'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'vin_new',
     'client', 'person', 'appraiser',
-    'type_reception', 'vtd', 'group_price', 'stage_price', 'iznos', 'type_sale',
+    'type_reception', 'vtd', 'group_price', 'stage_price', 'iznos',
+    'autohub_cna', 'autohub_pcp', 'autohub_imv', 'autohub_diff',
+    'autohub_rating', 'autohub_views', 'autohub_marketing', 'autohub_date',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
 ]
@@ -115,6 +117,8 @@ MARGIN_COLUMN_DEFS = {
     'reception_date': {'label': 'Дата приёма', 'sortable': True, 'sort_key': 'reception_date', 'num': False},
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
     'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
+    'status': {'label': 'Статус', 'sortable': False, 'num': False},
+    'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
     'mark': {'label': 'Марка', 'sortable': True, 'sort_key': 'mark', 'num': False},
     'model': {'label': 'Модель', 'sortable': True, 'sort_key': 'model', 'num': False},
@@ -128,9 +132,16 @@ MARGIN_COLUMN_DEFS = {
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
     'vtd': {'label': 'ВТД', 'sortable': True, 'sort_key': 'vtd', 'num': False},
     'group_price': {'label': 'Ценовая группа', 'sortable': False, 'num': False},
-    'stage_price': {'label': 'Этап цены', 'sortable': False, 'num': False},
+    'stage_price': {'label': 'Этап продажи', 'sortable': False, 'num': False},
     'iznos': {'label': 'Износ', 'sortable': True, 'sort_key': 'iznos', 'num': False},
-    'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
+    'autohub_cna': {'label': 'ЦНА', 'sortable': False, 'num': True},
+    'autohub_pcp': {'label': 'ПЦП', 'sortable': False, 'num': True},
+    'autohub_imv': {'label': 'Оценка Авито', 'sortable': False, 'num': True},
+    'autohub_diff': {'label': 'Откл. от рынка', 'sortable': False, 'num': True, 'signed': True},
+    'autohub_rating': {'label': 'Позиция / Конкуренты', 'sortable': False, 'num': False},
+    'autohub_views': {'label': 'Просмотры', 'sortable': False, 'num': True},
+    'autohub_marketing': {'label': 'Реклама', 'sortable': False, 'num': True},
+    'autohub_date': {'label': 'Дата Автохаб', 'sortable': False, 'num': False},
     'amount': {'label': 'Продажа', 'sortable': True, 'sort_key': 'amount', 'num': True},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
     'outlay': {'label': 'Расходы', 'sortable': True, 'sort_key': 'outlay', 'num': True},
@@ -175,7 +186,7 @@ MARGIN_SORT_FIELDS = {
 
 # --- Склад ---
 STOCK_DEFAULT_COLUMNS = [
-    'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'reception_date', 'unit', 'unit_source', 'status', 'type_reception',
+    'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'reception_date', 'unit', 'unit_source', 'status', 'type_sale', 'type_reception',
     'group_price', 'stage_price', 'iznos',
     'days', 'person',
     'price', 'autohub_cna', 'autohub_pcp', 'autohub_imv', 'autohub_diff',
@@ -194,9 +205,10 @@ STOCK_COLUMN_DEFS = {
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
     'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'status': {'label': 'Статус', 'sortable': True, 'sort_key': 'status', 'num': False},
+    'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
     'group_price': {'label': 'Ценовая группа', 'sortable': True, 'sort_key': 'group_price', 'num': False},
-    'stage_price': {'label': 'Этап УС', 'sortable': True, 'sort_key': 'stage_price', 'num': False},
+    'stage_price': {'label': 'Этап продажи', 'sortable': True, 'sort_key': 'stage_price', 'num': False},
     'iznos': {'label': 'Износ', 'sortable': True, 'sort_key': 'iznos', 'num': False},
     'days': {'label': 'Дней', 'sortable': True, 'sort_key': 'days', 'num': True},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
@@ -228,6 +240,7 @@ STOCK_SORT_FIELDS = {
     'unit': 'unit__name',
     'unit_source': 'lo__rlk__unit_dc__name',
     'status': 'status__name',
+    'type_sale': 'type_sale__name',
     'type_reception': 'type_reception__name',
     'group_price': 'group_price__name',
     'stage_price': 'stage_price__name',
@@ -245,7 +258,7 @@ STOCK_SORT_FIELDS = {
 
 # --- Принятые ---
 ACCEPTED_DEFAULT_COLUMNS = [
-    'date', 'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'client', 'person', 'type_reception',
+    'date', 'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'status', 'type_sale', 'client', 'person', 'type_reception',
     'group_price', 'stage_price', 'iznos', 'kolesa2_reception',
     'cost_price', 'bcp', 'run', 'unit', 'unit_source',
 ]
@@ -257,11 +270,13 @@ ACCEPTED_COLUMN_DEFS = {
     'modification': {'label': 'Модификация', 'sortable': True, 'sort_key': 'modification', 'num': False},
     'complectation': {'label': 'Комплектация', 'sortable': True, 'sort_key': 'complectation', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
+    'status': {'label': 'Статус', 'sortable': False, 'num': False},
+    'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
     'group_price': {'label': 'Ценовая группа', 'sortable': False, 'num': False},
-    'stage_price': {'label': 'Этап УС', 'sortable': False, 'num': False},
+    'stage_price': {'label': 'Этап продажи', 'sortable': False, 'num': False},
     'iznos': {'label': 'Износ', 'sortable': True, 'sort_key': 'iznos', 'num': False},
     'kolesa2_reception': {'label': 'Приёмка 2КК', 'sortable': True, 'sort_key': 'kolesa2_reception', 'num': False},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
@@ -281,6 +296,7 @@ ACCEPTED_SORT_FIELDS = {
     'modification': 'cars__modification',
     'complectation': 'complectation_autoru__name',
     'vin': 'vin',
+    'type_sale': 'auction',
     'client': 'clientName',
     'person': 'report_staff_name',
     'type_reception': 'type_reception__name',
@@ -470,7 +486,16 @@ def cell_export_value(report_key: str, row: dict, key: str):
                 'Да' if row.get('has_iznos') and row.get('iznos')
                 else ('Нет' if row.get('has_iznos') else '')
             ),
+            'status': row.get('status_name'),
             'type_sale': row.get('type_sale'),
+            'autohub_cna': row.get('autohub_cna'),
+            'autohub_pcp': row.get('autohub_pcp'),
+            'autohub_imv': row.get('autohub_imv'),
+            'autohub_diff': row.get('autohub_diff'),
+            'autohub_rating': row.get('autohub_rating'),
+            'autohub_views': row.get('autohub_views'),
+            'autohub_marketing': row.get('autohub_marketing'),
+            'autohub_date': row.get('autohub_date'),
             'amount': row.get('amount'),
             'cost_price': row.get('cost_price'),
             'outlay': row.get('outlay'),
@@ -564,6 +589,8 @@ def cell_export_value(report_key: str, row: dict, key: str):
         'vin': row.get('vin'),
         'client': row.get('client'),
         'person': row.get('person_name'),
+        'status': row.get('status_name'),
+        'type_sale': row.get('type_sale'),
         'type_reception': row.get('type_reception'),
         'group_price': row.get('group_price'),
         'stage_price': row.get('stage_price'),
