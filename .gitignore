@@ -1,10 +1,17 @@
 /.vs
 /.vscode
+/.venv
 /certificate.pem
 /key.crt
 /key.key
 /media
 /static.rar
+
+# Локальное дев-окружение (Linux) — не для прода (винда)
+/local.env
+/local_static/
+/local_media/
+/local_media_dop/
 *.pyc
 **/pycache
 
