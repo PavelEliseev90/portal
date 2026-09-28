@@ -4,14 +4,727 @@
    Соглашения по именам и скоупу: docs/portal-ui-conventions.md
    ============================================ */
 
-/* Основная страница */
- /* Метрические карточки */
- .metric-card-portal {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  height: 100%;
+/* ==========================================================================
+   0. TOKENS & CSS VARIABLES (:root)
+   ========================================================================== */
+:root {
+  /* Brand colors */
+  --kg-primary: #002a5a;
+  --kg-primary-hover: #001e40;
+  --kg-primary-light: #0d47a1;
+  --kg-primary-subtle: rgba(0, 42, 90, 0.08);
+  --kg-accent-blue: #4a90e2;
+  --kg-accent-green: #10b981;
+  --kg-accent-red: #dc2626;
+  --kg-accent-amber: #f59e0b;
+
+  /* Backgrounds */
+  --kg-bg-page: #f4f7fb;
+  --kg-bg-panel: #ffffff;
+  --kg-bg-subtle: #f8fafc;
+  --kg-bg-hover: #f1f5f9;
+
+  /* Typography colors */
+  --kg-text-dark: #002a5a;
+  --kg-text-body: #1e293b;
+  --kg-text-muted: #64748b;
+  --kg-text-label: #8ea1ba;
+
+  /* Borders & Shadows */
+  --kg-border-color: rgba(0, 42, 90, 0.08);
+  --kg-border-subtle: #e2e8f0;
+  --kg-radius-sm: 0.5rem;
+  --kg-radius-md: 0.85rem;
+  --kg-radius-lg: 1.1rem;
+  --kg-radius-xl: 1.25rem;
+  --kg-radius-pill: 999px;
+  --kg-shadow-card: 0 14px 32px rgba(0, 23, 61, 0.06);
+  --kg-shadow-hover: 0 18px 36px rgba(0, 23, 61, 0.09);
+
+  /* Status Colors */
+  --kg-status-inactive-bg: #f1f5f9;
+  --kg-status-inactive-text: #475569;
+  --kg-status-inactive-border: #cbd5e1;
+
+  --kg-status-pending-bg: #fffbeb;
+  --kg-status-pending-text: #b45309;
+  --kg-status-pending-border: #fde68a;
+
+  --kg-status-success-bg: #ecfdf5;
+  --kg-status-success-text: #047857;
+  --kg-status-success-border: #a7f3d0;
+
+  --kg-status-danger-bg: #fef2f2;
+  --kg-status-danger-text: #b91c1c;
+  --kg-status-danger-border: #fecaca;
 }
+
+/* ==========================================================================
+   1. CORE PORTAL LAYOUT & CONTAINERS
+   ========================================================================== */
+.portal-page,
+.portal-rec-page,
+.doc-zn-page {
+  padding: 1.25rem 1.5rem 3.5rem;
+  background: var(--kg-bg-page);
+  min-height: 100vh;
+  color: var(--kg-text-body);
+}
+
+.portal-nav,
+.portal-rec-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+.portal-nav a,
+.portal-rec-nav a {
+  color: var(--kg-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.portal-nav a:hover,
+.portal-rec-nav a:hover {
+  color: var(--kg-text-dark);
+  text-decoration: underline;
+}
+.portal-nav .sep,
+.portal-rec-nav .sep {
+  color: #cbd5e1;
+}
+.portal-nav .curr,
+.portal-rec-nav .curr {
+  color: var(--kg-text-dark);
+  font-weight: 600;
+}
+
+.portal-header,
+.portal-rec-header,
+.doc-zn-header {
+  background: var(--kg-bg-panel);
+  border-radius: var(--kg-radius-lg);
+  border: 1px solid var(--kg-border-color);
+  box-shadow: var(--kg-shadow-card);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.portal-header h2,
+.portal-rec-header h2,
+.doc-zn-header h2 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--kg-text-dark);
+  margin: 0 0 0.35rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.portal-header .subtitle,
+.portal-rec-header .subtitle,
+.portal-header p,
+.portal-rec-header p {
+  color: var(--kg-text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.portal-panel,
+.portal-rec-panel,
+.doc-zn-section,
+.asp-rep-panel {
+  background: var(--kg-bg-panel);
+  border-radius: var(--kg-radius-lg);
+  border: 1px solid var(--kg-border-color);
+  box-shadow: var(--kg-shadow-card);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+
+.portal-panel-header,
+.portal-rec-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--kg-bg-hover);
+}
+
+.portal-panel-title,
+.portal-rec-panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--kg-text-dark);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ==========================================================================
+   2. KPI METRICS & CARDS
+   ========================================================================== */
+.portal-metric,
+.portal-rec-metric,
+.asp-rep-metric {
+  background: var(--kg-bg-panel);
+  border-radius: var(--kg-radius-lg);
+  border: 1px solid var(--kg-border-color);
+  box-shadow: var(--kg-shadow-card);
+  padding: 1rem 1.15rem;
+  height: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.portal-metric:hover,
+.portal-rec-metric:hover,
+.asp-rep-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--kg-shadow-hover);
+}
+.portal-metric .t,
+.portal-rec-metric .t,
+.asp-rep-metric .t {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--kg-text-label);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.portal-metric .v,
+.portal-rec-metric .v,
+.asp-rep-metric .v {
+  font-size: 1.45rem;
+  font-weight: 750;
+  color: var(--kg-text-dark);
+  line-height: 1.2;
+  margin-bottom: 0.2rem;
+}
+.portal-metric .s,
+.portal-rec-metric .s,
+.asp-rep-metric .s {
+  color: var(--kg-text-muted);
+  font-size: 0.82rem;
+}
+
+.portal-metric.highlight-total,
+.portal-rec-metric.highlight-total {
+  background: linear-gradient(135deg, #002a5a 0%, #0d47a1 100%);
+  color: #ffffff;
+  border: none;
+}
+.portal-metric.highlight-total .t,
+.portal-rec-metric.highlight-total .t {
+  color: rgba(255, 255, 255, 0.75);
+}
+.portal-metric.highlight-total .v,
+.portal-rec-metric.highlight-total .v {
+  color: #ffffff;
+}
+.portal-metric.highlight-total .s,
+.portal-rec-metric.highlight-total .s {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ==========================================================================
+   3. STATUS BADGES & KEY-VALUE LABELS
+   ========================================================================== */
+.rec-status-badge,
+.badge-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--kg-radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.rec-status-0,
+.badge-portal-neutral {
+  background: var(--kg-status-inactive-bg);
+  color: var(--kg-status-inactive-text);
+  border: 1px solid var(--kg-status-inactive-border);
+}
+.rec-status-1,
+.badge-portal-warning {
+  background: var(--kg-status-pending-bg);
+  color: var(--kg-status-pending-text);
+  border: 1px solid var(--kg-status-pending-border);
+}
+.rec-status-2,
+.badge-portal-success {
+  background: var(--kg-status-success-bg);
+  color: var(--kg-status-success-text);
+  border: 1px solid var(--kg-status-success-border);
+}
+.rec-status-3,
+.badge-portal-danger {
+  background: var(--kg-status-danger-bg);
+  color: var(--kg-status-danger-text);
+  border: 1px solid var(--kg-status-danger-border);
+}
+
+.field-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--kg-text-label);
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.field-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--kg-text-dark);
+  word-break: break-word;
+}
+.field-value-secondary {
+  color: #475569;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   4. TABLES (Portal standard tables)
+   ========================================================================== */
+.table-portal,
+.table-asp {
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+.table-portal th,
+.table-asp th {
+  background: var(--kg-bg-subtle);
+  color: #5b6b82;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 0.75rem 0.85rem;
+  border-top: none;
+  border-bottom: 2px solid var(--kg-border-subtle);
+  vertical-align: middle;
+}
+.table-portal td,
+.table-asp td {
+  padding: 0.75rem 0.85rem;
+  font-size: 0.88rem;
+  color: var(--kg-text-body);
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.table-portal tbody tr:hover td,
+.table-asp tbody tr:hover td {
+  background-color: #f8faff;
+}
+.table-portal tfoot td,
+.table-asp tfoot td {
+  background: var(--kg-bg-subtle);
+  font-weight: 700;
+  color: var(--kg-text-dark);
+  border-top: 2px solid var(--kg-border-subtle);
+  border-bottom: none;
+  padding: 0.85rem;
+}
+.num-cell,
+.table-asp .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.table-asp .pos {
+  color: #0f9d58;
+  font-weight: 600;
+}
+.table-asp .neg {
+  color: #dc2626;
+  font-weight: 600;
+}
+.row-total {
+  background: var(--kg-bg-subtle);
+  font-weight: 600;
+}
+
+.table-group-header {
+  background: #f8fafc;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.table-group-header:hover {
+  background: #edf2f7 !important;
+}
+.table-group-header.expanded {
+  background: #edf2f7;
+  border-bottom: 1px solid #cbd5e1;
+}
+.table-group-detail {
+  background: #ffffff;
+  font-size: 0.82rem;
+}
+.table-group-detail:hover {
+  background: #f8faff !important;
+}
+.toggle-icon {
+  display: inline-block;
+  width: 1.2rem;
+  text-align: center;
+  font-weight: bold;
+  color: #4a5568;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+.rec-link {
+  color: var(--kg-primary);
+  text-decoration: none;
+}
+.rec-link:hover {
+  text-decoration: underline;
+  color: var(--kg-accent-blue);
+}
+
+.asp-rep {
+  padding: 1.25rem 1.5rem 3rem;
+  background: var(--kg-bg-page);
+  min-height: 100vh;
+}
+.asp-rep h2 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: var(--kg-text-dark);
+  margin: 0 0 0.35rem;
+}
+.asp-rep .lead {
+  color: var(--kg-text-muted);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+.asp-rep-filter {
+  background: var(--kg-bg-panel);
+  border-radius: var(--kg-radius-lg);
+  border: 1px solid var(--kg-border-color);
+  box-shadow: var(--kg-shadow-card);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.asp-rep-filter .metric-card-label-portal,
+.asp-rep-filter .form-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--kg-text-label);
+  margin-bottom: 0.35rem;
+}
+.asp-hint {
+  font-size: 0.82rem;
+  color: var(--kg-text-muted);
+}
+.asp-sort-btn {
+  color: #5b6b82 !important;
+}
+.asp-sort-btn:hover {
+  color: var(--kg-text-dark) !important;
+}
+.asp-col-item.opacity-50 {
+  opacity: 0.5;
+}
+
+.btn-preset-date {
+  font-size: 0.75rem;
+  border-radius: var(--kg-radius-pill);
+  padding: 0.15rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+.btn-preset-date:hover {
+  background-color: var(--kg-primary);
+  border-color: var(--kg-primary);
+  color: #fff;
+}
+.unit-checks {
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--kg-border-subtle);
+  border-radius: var(--kg-radius-sm);
+  padding: 0.5rem 0.75rem;
+  background: var(--kg-bg-subtle);
+}
+.unit-checks .form-check {
+  margin-bottom: 0.2rem;
+}
+.view-tabs .btn {
+  border-radius: var(--kg-radius-pill);
+  font-size: 0.85rem;
+}
+
+.docs-zn-report-page {
+  padding: 1.5rem;
+  background: var(--kg-bg-page);
+  min-height: 100vh;
+}
+.docs-zn-report-header {
+  margin-bottom: 1.5rem;
+}
+.docs-zn-report-card {
+  background: var(--kg-bg-panel);
+  border-radius: var(--kg-radius-xl);
+  padding: 1.5rem;
+  border: 1px solid var(--kg-border-color);
+  box-shadow: var(--kg-shadow-card);
+  margin-bottom: 1.5rem;
+}
+.docs-zn-report-card .table thead th {
+  background: linear-gradient(135deg, #002a5a 0%, #00509d 100%) !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #fff !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  vertical-align: middle !important;
+  padding: 1rem 0.75rem !important;
+}
+.toggle-icon.rotated {
+  transform: rotate(90deg);
+}
+.pagination-wrapper {
+  background: #fff;
+  border-radius: var(--kg-radius-lg);
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--kg-border-color);
+  box-shadow: var(--kg-shadow-card);
+  margin-top: 1.5rem;
+}
+.pagination .page-link {
+  color: var(--kg-primary);
+  border-color: rgba(0, 42, 90, 0.15);
+}
+.pagination .page-link:hover {
+  background-color: var(--kg-bg-page);
+  border-color: rgba(0, 42, 90, 0.3);
+}
+.pagination .page-item.active .page-link {
+  background-color: var(--kg-primary);
+  border-color: var(--kg-primary);
+  color: #fff;
+}
+
+/* ==========================================================================
+   5. MEDIA GALLERIES, LIGHTBOX & CARDS
+   ========================================================================== */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.gallery-card {
+  background: var(--kg-bg-subtle);
+  border: 1px solid var(--kg-border-subtle);
+  border-radius: var(--kg-radius-md);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.gallery-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 23, 61, 0.08);
+  border-color: #cbd5e1;
+}
+.gallery-card-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  background: #e2e8f0;
+}
+.gallery-card-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0, 42, 90, 0.85);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--kg-radius-pill);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.gallery-card-footer {
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--kg-bg-panel);
+  border-top: 1px solid #f1f5f9;
+}
+.gallery-card-footer a {
+  font-size: 0.78rem;
+  color: var(--kg-text-dark);
+  text-decoration: none;
+  font-weight: 600;
+}
+.gallery-card-footer a:hover {
+  text-decoration: underline;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.video-container iframe,
+.video-container video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ==========================================================================
+   6. ACTION BUTTONS & NOTIFICATIONS
+   ========================================================================== */
+.btn-portal-primary {
+  background-color: var(--kg-primary);
+  border-color: var(--kg-primary);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0.6rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+.btn-portal-primary:hover {
+  background-color: var(--kg-primary-hover);
+  border-color: var(--kg-primary-hover);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 42, 90, 0.25);
+}
+.btn-portal-outline {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-weight: 600;
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+.btn-portal-outline:hover {
+  background: var(--kg-bg-subtle);
+  border-color: #94a3b8;
+  color: var(--kg-text-dark);
+}
+
+.copy-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1090;
+  background: var(--kg-text-dark);
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--kg-radius-md);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.copy-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.zn-card {
+  background: var(--kg-bg-subtle);
+  border-radius: var(--kg-radius-md);
+  border: 1px solid var(--kg-border-subtle);
+  padding: 1rem 1.15rem;
+}
+
+.total-summary-bar {
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+  border: 1px solid var(--kg-border-subtle);
+  border-radius: var(--kg-radius-md);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* ==========================================================================
+   7. PRINT OPTIMIZATION
+   ========================================================================== */
+@media print {
+  .portal-nav,
+  .portal-rec-nav,
+  .portal-header .actions,
+  .portal-rec-header .actions,
+  .btn-close,
+  .copy-toast,
+  header,
+  nav,
+  #sidebarMenu,
+  footer,
+  .asp-rep-filter,
+  .btn-preset-date {
+    display: none !important;
+  }
+  .portal-page,
+  .portal-rec-page,
+  .doc-zn-page {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .portal-panel,
+  .portal-rec-panel,
+  .portal-header,
+  .portal-rec-header,
+  .portal-metric,
+  .portal-rec-metric {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ==========================================================================
+   8. LEGACY COMPATIBILITY
+   ========================================================================== */
 
 .metric-card-portal h4 {
   font-size: 0.85rem;
