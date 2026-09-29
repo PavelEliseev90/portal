@@ -6,7 +6,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('LOCAL_DB_PORT', '5433')
+    #os.environ.setdefault('LOCAL_DB_PORT', '5433')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'portal.settings')
     try:
         from django.core.management import execute_from_command_line

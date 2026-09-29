@@ -475,7 +475,7 @@
     function checkSendWindow() {
         const now = new Date();
         const hour = now.getHours();
-        const isClosed = hour >= 10 && hour < 14;
+        const isClosed = hour >= 14 && hour < 14;
 
         const banner = root.querySelector("[data-af-send-window]");
         if (banner) {
@@ -524,7 +524,7 @@
         btn.addEventListener("click", function (e) {
             const now = new Date();
             const hour = now.getHours();
-            if (hour >= 10 && hour < 14) {
+            if (hour >= 14 && hour < 14) {
                 e.preventDefault();
                 e.stopPropagation();
                 showToast("Создание лотов недоступно с 10:00 до 14:00");
