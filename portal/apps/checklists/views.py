@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 from django.db.models import OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse

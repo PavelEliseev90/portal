@@ -78,7 +78,7 @@ avtoteka_url            = 'https://api.avito.ru/'
 
 
 ssl_context         = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-localhost_pem       = 'D:\\kors_group\\portal\\portal\\apps\\task_manager\\certificate.pem'
+localhost_pem       = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certificate.pem')
 ssl_context.load_verify_locations(localhost_pem)
 
 def send_settings_unit(unit):

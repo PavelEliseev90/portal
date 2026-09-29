@@ -180,7 +180,9 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'Audi80b4',
         'HOST': '127.0.0.1',
-        'PORT': '5432',
+        # локально стучимся в отдельный instance с восстановленным дампом (порт 5433),
+        # на проде переменная не задана — уходит на дефолтный 5432
+        'PORT': os.environ.get('LOCAL_DB_PORT', '5432'),
     }
 }
 
@@ -279,14 +281,15 @@ USE_DJANGO_JQUERY   = True
 
 STATIC_URL  = '/static/'
 #STATIC_ROOT = 'D:/kors_group/portal/static/'
-STATIC_ROOT = 'D:/portal_eliseev/portal_kg/static/'
+# локально (Linux) винда-путь не существует — переопределяем через env, на проде переменная не задана
+STATIC_ROOT = os.environ.get('LOCAL_STATIC_ROOT', 'D:/portal_eliseev/portal_kg/static/')
 STATICFILES_DIRS = [os.path.join(BASE_DIR,"")]
 
 MEDIA_URL   = '/media/'
-MEDIA_ROOT  = 'D:/kors_group/portal/media/'
+MEDIA_ROOT  = os.environ.get('LOCAL_MEDIA_ROOT', 'D:/kors_group/portal/media/')
 
 MEDIA_URL_DOP   = '/media/'
-MEDIA_ROOT_DOP  = 'E:/portal/'
+MEDIA_ROOT_DOP  = os.environ.get('LOCAL_MEDIA_ROOT_DOP', 'E:/portal/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -390,6 +393,8 @@ MYKORS_REQUEST_DELAY_SEC = float('0.15')
 MYKORS_EXPORT_BATCH_LIMIT = int('0')  # 0 = all stock
 MYKORS_SKIP_UNCHANGED = '1'
 MYKORS_PORTAL_PUBLIC_BASE_URL = 'https://ah.kors-group.com'
+MYKORS_INGEST_API_KEY = os.environ.get('MYKORS_INGEST_API_KEY') or MYKORS_API_KEY
+MYKORS_INGEST_API_SECRET = os.environ.get('MYKORS_INGEST_API_SECRET') or MYKORS_API_SECRET
 MYKORS_PHOTOS_LIMIT = int('50')
 
 

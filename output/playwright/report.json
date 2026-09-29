@@ -1,0 +1,64 @@
+{
+  "report": {
+    "title": "КорсКор - Аукционы автомобилей",
+    "url": "http://127.0.0.1:8011/auction/",
+    "hasFloor": true,
+    "floorBg": "rgb(10, 10, 10)",
+    "floorColor": "rgb(245, 245, 245)",
+    "floorRadius": "28px",
+    "headerRadius": "22px",
+    "headerBg": "rgb(17, 17, 17)",
+    "railRadius": "22px",
+    "rowCount": 10,
+    "empty": false,
+    "btnRadius": "999px",
+    "btnBg": "rgb(245, 130, 32)",
+    "cssHref": "http://127.0.0.1:8011/static/css/auction-floor.css",
+    "jsPresent": true,
+    "combos": 2,
+    "issues": [],
+    "lowContrast": [
+      {
+        "sel": "af-kicker",
+        "color": "rgb(245, 130, 32)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "font": "\"IBM Plex Sans\", \"Open Sans\", sans-serif"
+      },
+      {
+        "sel": "af-title",
+        "color": "rgb(255, 255, 255)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "font": "Oswald, \"IBM Plex Sans\", sans-serif"
+      },
+      {
+        "sel": "af-stat__value",
+        "color": "rgb(255, 255, 255)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "font": "\"IBM Plex Mono\", ui-monospace, monospace"
+      },
+      {
+        "sel": "af-stat__value",
+        "color": "rgb(255, 255, 255)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "font": "\"IBM Plex Mono\", ui-monospace, monospace"
+      },
+      {
+        "sel": "af-stat__value",
+        "color": "rgb(255, 255, 255)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "font": "\"IBM Plex Mono\", ui-monospace, monospace"
+      }
+    ],
+    "comboOpen": true,
+    "mobileOverflow": false,
+    "filtersBtnVisible": true,
+    "sheetOpen": true
+  },
+  "consoleLogs": [
+    {
+      "type": "log",
+      "text": "DOM загружен, инициализируем слайдеры..."
+    }
+  ],
+  "failed": []
+}
