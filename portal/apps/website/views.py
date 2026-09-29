@@ -1394,6 +1394,10 @@ def sms_opros_service(request):
         coment          = request.GET.get('coment', '')
         type_zn         = request.GET.get('type_zn', '')
         status          = request.GET.get('status', '')
+        group_mode      = request.GET.get('group_mode', 'unit')
+        unit_group_id   = request.GET.get('unit_group_id', '')
+        if group_mode not in ('unit', 'group'):
+            group_mode = 'unit'
 
         date_period = DT.datetime.now()
         if len(date_start) == 0:
@@ -1433,10 +1437,21 @@ def sms_opros_service(request):
             docs = docs.filter(zn__customer__phoneNorm__icontains = phone)
             filter_count = filter_count + 1
         
-        if len(unit_id) > 0:
+        if len(unit_id) > 0 and group_mode == 'unit':
             filter_count = filter_count + 1
             unit_id = int(unit_id)
             docs = docs.filter(zn__unit__id = unit_id)
+
+        if unit_group_id and group_mode == 'group':
+            filter_count = filter_count + 1
+            try:
+                from refs.models import RefUnitGroup
+                group_obj = RefUnitGroup.objects.filter(pk=int(unit_group_id)).prefetch_related('units').first()
+                if group_obj:
+                    g_unit_ids = list(group_obj.units.values_list('id', flat=True))
+                    docs = docs.filter(zn__unit__id__in=g_unit_ids)
+            except (ValueError, TypeError):
+                pass
 
         if len(type_zn) > 0:
             filter_count = filter_count + 1
@@ -1475,6 +1490,13 @@ def sms_opros_service(request):
         paginator   = Paginator(list(docs), select_count)
         page_obj    = paginator.get_page(page_number)
         
+        units_groups = []
+        try:
+            from refs.models import RefUnitGroup
+            units_groups = list(RefUnitGroup.objects.filter(active=True).order_by('name').values('id', 'name', 'name_bi'))
+        except Exception:
+            pass
+
         filtr = {
             'name'              : name,
             'date_start'        : date_start,
@@ -1488,12 +1510,15 @@ def sms_opros_service(request):
             'type_zn'           : type_zn,
             'select_count'      : select_count,
             'status'            : status,
+            'group_mode'        : group_mode,
+            'unit_group_id'     : unit_group_id,
             'filtr_count'       : filter_count
         }
 
         selected = {
-            'types_zn'  : types_zn,
-            'units'     : units_selected
+            'types_zn'      : types_zn,
+            'units'         : units_selected,
+            'units_groups'  : units_groups,
         }
         
         params = {

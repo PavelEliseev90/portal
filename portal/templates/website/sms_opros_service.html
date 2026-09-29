@@ -46,12 +46,32 @@
         <div class="metric-card-label-portal">по</div>
         <input class="form-control" type="date" id="date_end" name="date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}">
       </div>
-      <div class="col-6 col-md-3 col-lg-2">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="metric-card-label-portal">Режим фильтра по ДЦ</div>
+        <div class="btn-group w-100" role="group" id="group_mode_switcher">
+          <input type="radio" class="btn-check" name="group_mode" id="gm_unit" value="unit" {% if params.filtr.group_mode != 'group' %}checked{% endif %} autocomplete="off">
+          <label class="btn btn-outline-primary btn-sm" for="gm_unit">По подразделению</label>
+          <input type="radio" class="btn-check" name="group_mode" id="gm_group" value="group" {% if params.filtr.group_mode == 'group' %}checked{% endif %} autocomplete="off">
+          <label class="btn btn-outline-primary btn-sm" for="gm_group">По группе ДЦ</label>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2" id="filter_unit_block" {% if params.filtr.group_mode == 'group' %}style="display:none"{% endif %}>
         <div class="metric-card-label-portal">Подразделение</div>
         <select class="form-select" id="unit_id" name="unit_id">
           <option value=""></option>
           {% for unit in params.selected.units %}
             <option value="{{ unit.id }}" {% if params.filtr.unit_id == unit.id %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2" id="filter_group_block" {% if params.filtr.group_mode != 'group' %}style="display:none"{% endif %}>
+        <div class="metric-card-label-portal">Группа ДЦ</div>
+        <select class="form-select" id="unit_group_id" name="unit_group_id">
+          <option value=""></option>
+          {% for grp in params.selected.units_groups %}
+            <option value="{{ grp.id }}" {% if params.filtr.unit_group_id == grp.id|stringformat:"s" %}selected{% endif %}>
+              {% if grp.name_bi %}{{ grp.name_bi }}{% else %}{{ grp.name }}{% endif %}
+            </option>
           {% endfor %}
         </select>
       </div>
@@ -262,6 +282,33 @@
       else if (window.jQuery) $('#exampleModal_download').modal('hide');
     };
     request.send();
+  });
+})();
+
+// Переключение режима фильтра по ДЦ: подразделение / группа ДЦ
+(function() {
+  var unitBlock  = document.getElementById('filter_unit_block');
+  var groupBlock = document.getElementById('filter_group_block');
+  var radios     = document.querySelectorAll('input[name="group_mode"]');
+  if (!unitBlock || !groupBlock || !radios.length) return;
+
+  function applyMode(mode) {
+    if (mode === 'group') {
+      unitBlock.style.display  = 'none';
+      groupBlock.style.display = '';
+      // сбрасываем unit_id чтобы не передавался лишний параметр
+      var unitSel = document.getElementById('unit_id');
+      if (unitSel) unitSel.value = '';
+    } else {
+      unitBlock.style.display  = '';
+      groupBlock.style.display = 'none';
+      var groupSel = document.getElementById('unit_group_id');
+      if (groupSel) groupSel.value = '';
+    }
+  }
+
+  radios.forEach(function(r) {
+    r.addEventListener('change', function() { applyMode(r.value); });
   });
 })();
 </script>
