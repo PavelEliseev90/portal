@@ -150,14 +150,14 @@
                 <span class="af-stat__hint">Единиц в каталоге</span>
             </div>
         </div>
-        <aside class="af-banner{% if not params.sends %} is-closed{% endif %}" data-af-send-window role="status">
+        <aside class="af-banner{% if params.sends == False %} is-closed{% endif %}" data-af-send-window role="status">
             <div class="af-banner__icon-wrap">
                 <svg class="af-banner__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             </div>
             <div class="af-banner__content">
                 <div class="af-banner__badge">Окно отправки лотов</div>
                 <p data-af-banner-text>
-                    {% if not params.sends %}
+                    {% if params.sends == False %}
                     <strong>Окно закрыто:</strong> отправка и создание лотов недоступны с 10:00 до 14:00.
                     {% else %}
                     Отправка лотов недоступна с 10:00 до 14:00.

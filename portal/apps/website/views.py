@@ -10895,7 +10895,7 @@ def auction_list(request):
     }
     
     now = DT.datetime.now()
-    sends = not (10 <= now.hour < 14)
+    sends = not (11 <= now.hour < 14)
 
     params = {
         'type'          : 'auction',
@@ -10954,7 +10954,7 @@ def auction_doc_new(request):
     if _auction_user_sb_readonly(request.user):
         return HttpResponseRedirect('/auction/')
     now = DT.datetime.now()
-    if 10 <= now.hour < 14:
+    if 11 <= now.hour < 14:
         return HttpResponseRedirect('/auction/')
     return auction_doc(request, 'new_lots')
 
@@ -10983,7 +10983,7 @@ def auction_doc(request, slug_auction):
     user    = request.user
     answer  = ''
     sends   = False
-    if DT.datetime.now().hour < 10 or DT.datetime.now().hour >= 14:
+    if DT.datetime.now().hour < 11 or DT.datetime.now().hour >= 14:
         sends = True
 
     if slug_auction == 'new_lots':
@@ -11174,7 +11174,7 @@ def auction_doc(request, slug_auction):
 
             if 'send' in request.POST:
                 if sends == False:
-                    error = 'Отправка не возможна в период с 10:00 до 14:00. Подготовьте лоты к отправке, проверьте автомобили. И отправьте лоты на аукцион в указаный промежуток доступности.'
+                    error = 'Отправка не возможна в период с 11:00 до 14:00. Подготовьте лоты к отправке, проверьте автомобили. И отправьте лоты на аукцион в указаный промежуток доступности.'
                 elif AuctionStructure.objects.filter(auction=auction, success=False).exists():
                     error = 'Не все автомобили проверены, отправка не возможна. Проверьте автомобили и информацию о них.'
                 else:
