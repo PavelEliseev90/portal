@@ -1077,7 +1077,7 @@ class DocCarShipment(models.Model):
     amount_reward_credit                    = models.FloatField("Сумма вознаграждения кредит", default=0.0, blank=True)
     amount_reward_opfu                      = models.FloatField("Сумма вознаграждения ОПФУ", default=0.0, blank=True)
     amount_kits                             = models.FloatField("Сумма продажи комплектов", default=0.0, blank=True)
-    cumulative_margin                       = models.FloatField("Кумулятивная маржа", null=True, blank=True)
+    cumulative_margin                       = models.FloatField("Кумулятивная маржа", default=0.0, blank=True)
     
     def cum(self):
         return self.amount - (self.cost_price + self.outlay)

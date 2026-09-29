@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load static %}
 
 {% block url %} {% endblock %} 
@@ -8,29 +8,6 @@
 {% block title_navbar %} - HelpDesk - {% if params.task %}Редактирование{% else %}Создание{% endif %} задачи {% endblock %}
     
 {% block content %}
-
-<style>
-    @media (max-width: 767.98px) {
-        .helpdesk-nav-btns .btn {
-            width: 100%;
-            margin-bottom: .5rem;
-        }
-        .form-floating > label {
-            font-size: .9rem;
-        }
-        .form-floating .form-control,
-        .form-floating .form-select {
-            min-height: 3.1rem;
-        }
-        .mobile-section-title {
-            font-size: .95rem;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            margin-top: 1.5rem;
-        }
-    }
-</style>
-
 <div class="row mb-3">
     <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">

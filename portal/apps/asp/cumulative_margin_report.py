@@ -15,6 +15,7 @@ from asp.report_common import (
     allowed_unit_ids,
     apply_type_reception_filter,
     details_payload,
+    enrich_rows_with_autohub,
     money,
     parse_common_filters,
     report_shell,
@@ -217,11 +218,12 @@ def _shipment_row_from_values(row: dict) -> dict[str, Any]:
         'has_vtd': vtd is not None,
         'group_price': '',
         'stage_price': '',
+        'status_name': 'Отгружен',
     }
 
 
 def _load_stock_price_map(values: list[dict]) -> dict[str, Any]:
-    """ЦГ и этап УС с карточки автомобиля, без join в .values() отгрузки."""
+    """ЦГ, этап УС, статус и тип продажи с карточки автомобиля."""
     lo_ids = []
     seen = set()
     for row in values:
@@ -245,7 +247,7 @@ def _load_stock_price_map(values: list[dict]) -> dict[str, Any]:
             RefCarsOrganization.objects
             .filter(lo_id__in=part)
             .order_by('-pk')
-            .values('lo_id', 'vin', 'slug', 'group_price__name', 'stage_price__name')
+            .values('lo_id', 'vin', 'slug', 'group_price__name', 'stage_price__name', 'type_sale__name', 'status__name')
         )
         for item in qs:
             lo_id = item.get('lo_id')
@@ -254,6 +256,8 @@ def _load_stock_price_map(values: list[dict]) -> dict[str, Any]:
                 'group_price': item.get('group_price__name') or '',
                 'stage_price': item.get('stage_price__name') or '',
                 'slug': item.get('slug') or '',
+                'type_sale': item.get('type_sale__name') or '',
+                'status_name': item.get('status__name') or 'Отгружен',
             }
             if vin and (lo_id, vin) not in by_lo_vin:
                 by_lo_vin[(lo_id, vin)] = payload
@@ -276,11 +280,16 @@ def _apply_stock_price_fields(values: list[dict], rows: list[dict]) -> None:
         row['group_price'] = info.get('group_price') or ''
         row['stage_price'] = info.get('stage_price') or ''
         row['slug'] = info.get('slug') or ''
+        if not row.get('type_sale') and info.get('type_sale'):
+            row['type_sale'] = info['type_sale']
+        if info.get('status_name'):
+            row['status_name'] = info['status_name']
 
 
 def _rows_from_values(values: list[dict]) -> list[dict[str, Any]]:
     rows = [_shipment_row_from_values(v) for v in values]
     _apply_stock_price_fields(values, rows)
+    enrich_rows_with_autohub(rows)
     return rows
 
 

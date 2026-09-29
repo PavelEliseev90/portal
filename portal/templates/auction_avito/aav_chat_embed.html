@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 {% with prefix=embed.prefix|default:"aav_feed" %}
 <div class="hidemobile" style="position: fixed; bottom: 0; right: 0; padding: 20px; z-index: 1030;">
     <button type="button" class="btn bg-dark text-white" id="{{ prefix }}_chat_open" data-bs-toggle="offcanvas" data-bs-target="#{{ prefix }}Offcanvas" aria-controls="{{ prefix }}Offcanvas">
@@ -81,16 +81,6 @@
 </div>
 
 <audio id="{{ prefix }}-notif" src="{% include 'chats/notif_sound_src.html' with channel='avito' %}" preload="auto"></audio>
-
-<style>
-  .aav-chat-msg-lot { cursor: pointer; }
-  .aav-chat-msg-lot:hover .item-chat-body,
-  .aav-chat-msg-lot:hover .item-chat-body-owner {
-    background: rgba(0, 42, 90, 0.06);
-    border-radius: 8px;
-  }
-</style>
-
 <script>
 (function () {
     const prefix = '{{ prefix }}';

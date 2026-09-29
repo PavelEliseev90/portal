@@ -1,58 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
 	<title>Передача а/м в отдел продаж{% if params.vin %} — {{ params.vin }}{% endif %}</title>
-	<style>
-		@page { size: A4 portrait; margin: 8mm 10mm; }
-		* { box-sizing: border-box; }
-		html, body {
-			margin: 0; padding: 0;
-			font-family: "Segoe UI", Arial, Helvetica, sans-serif;
-			font-size: 11px; line-height: 1.25; color: #111; background: #e8e8e8;
-		}
-		.toolbar {
-			position: sticky; top: 0; z-index: 10;
-			display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-			padding: 10px 16px; background: #1e293b; color: #fff;
-		}
-		.toolbar a, .toolbar button {
-			appearance: none; border: 0; border-radius: 6px;
-			padding: 7px 12px; font-size: 13px; cursor: pointer;
-			text-decoration: none; color: #fff; background: #334155;
-		}
-		.toolbar button.primary { background: #2563eb; }
-		.toolbar .hint { margin-left: auto; font-size: 12px; opacity: .85; }
-		.sheet-wrap { padding: 16px; display: flex; justify-content: center; }
-		.sheet {
-			width: 210mm; min-height: 297mm; background: #fff;
-			padding: 7mm 8mm; box-shadow: 0 2px 12px rgba(0,0,0,.18);
-		}
-		h1 { margin: 0 0 4px; text-align: center; font-size: 15px; font-weight: 700; }
-		.sub { text-align: center; margin: 0 0 8px; color: #444; font-size: 11px; }
-		table.grid {
-			width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 6px;
-		}
-		table.grid th, table.grid td {
-			border: 1px solid #222; padding: 3px 5px; vertical-align: middle; word-wrap: break-word;
-		}
-		table.grid th { font-weight: 600; background: #f3f3f3; text-align: left; white-space: nowrap; }
-		.val { font-weight: 600; }
-		.section-title { font-weight: 700; background: #ececec !important; text-align: center; }
-		.chk-box {
-			display: inline-block; width: 12px; height: 12px;
-			border: 1.5px solid #222; margin-right: 4px; vertical-align: -1px;
-		}
-		.sign-row td { height: 36px; }
-		.works-list { margin: 0; padding-left: 16px; }
-		.works-list li { margin: 1px 0; }
-		@media print {
-			html, body { background: #fff; }
-			.toolbar { display: none !important; }
-			.sheet-wrap { padding: 0; }
-			.sheet { box-shadow: none; width: auto; min-height: auto; padding: 0; }
-		}
-	</style>
 </head>
 <body>
 	<div class="toolbar">

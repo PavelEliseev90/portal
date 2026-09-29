@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} - Настройки - Автопереоценка КорсАвто (Таблица) {% endblock %}
@@ -140,36 +140,6 @@
     </div>
   </div>
 </section>
-
-<style>
-  .column-toggle-group {
-    font-weight: 600;
-  }
-  
-  #autopricing-table th,
-  #autopricing-table td {
-    white-space: nowrap;
-    font-size: 0.85rem;
-  }
-  
-  #autopricing-table th {
-    text-align: center;
-    vertical-align: middle;
-    font-size: 0.75rem;
-    padding: 0.5rem 0.25rem;
-  }
-  
-  #autopricing-table td {
-    text-align: center;
-    padding: 0.5rem 0.25rem;
-  }
-  
-  .table-responsive {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-  }
-</style>
-
 <script>
   // Сохраняем состояние видимости столбцов в localStorage
   function saveColumnVisibility() {

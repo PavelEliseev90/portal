@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 
 {% block url %} {% endblock %} 
 
@@ -7,30 +7,6 @@
 {% block title_navbar %} - HelpDesk - Календарь {% endblock %}
     
 {% block content %}
-
-<style>
-    @media (max-width: 767.98px) {
-        .helpdesk-nav-btns .btn {
-            width: 100%;
-            margin-bottom: .5rem;
-        }
-        .calendar-header .btn {
-            width: 100%;
-            margin-bottom: .5rem;
-        }
-        .calendar-table {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        .calendar-table table {
-            min-width: 640px;
-        }
-        .calendar-table td {
-            height: 100px;
-        }
-    }
-</style>
-
 <div class="row mb-3">
     <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">

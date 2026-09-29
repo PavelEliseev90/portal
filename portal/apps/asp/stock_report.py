@@ -13,10 +13,12 @@ from asp.report_common import (
     allowed_unit_ids,
     apply_type_reception_filter,
     details_payload,
+    enrich_rows_with_autohub,
     money,
     paginate_values_qs,
     parse_common_filters,
     report_shell,
+    set_empty_autohub,
     sum_money,
 )
 from asp.report_table import resolve_order_by
@@ -150,85 +152,6 @@ DETAIL_VALUES = (
     'lo__dataTime', 'lo_link_date',
     'price', 'cost_price', 'outlay', 'bcp', 'quantity', 'days_in_stok',
 )
-
-
-def _set_empty_autohub(r: dict[str, Any]) -> None:
-    r['autohub_cna'] = None
-    r['autohub_pcp'] = None
-    r['autohub_imv'] = None
-    r['autohub_diff'] = None
-    r['autohub_rating'] = '—'
-    r['autohub_views'] = None
-    r['autohub_marketing'] = None
-    r['autohub_date'] = None
-
-
-def enrich_rows_with_autohub(rows: list[dict[str, Any]]) -> None:
-    """Обогащает список строк последними данными из таблицы Avtohub по VIN."""
-    if not rows:
-        return
-    from avtosalon.models import Avtohub
-
-    vins = [r['vin'].strip() for r in rows if r.get('vin') and r['vin'].strip()]
-    if not vins:
-        for r in rows:
-            _set_empty_autohub(r)
-        return
-
-    records = (
-        Avtohub.objects.filter(vin__in=vins)
-        .order_by('vin', '-date')
-        .values(
-            'vin', 'date', 'price', 'avgMarketPrice', 'imv', 'maxposterSaleCost',
-            'vRatingPosition', 'numberOfCompetitors',
-            'totalAdvertisingCost', 'avitoViews', 'autoruViews', 'dromViews',
-        )
-    )
-
-    latest_by_vin: dict[str, dict] = {}
-    for rec in records:
-        v = rec['vin']
-        if v not in latest_by_vin:
-            latest_by_vin[v] = rec
-        else:
-            cur = latest_by_vin[v]
-            cur_has_data = bool((cur.get('avgMarketPrice') or 0) > 0 or (cur.get('numberOfCompetitors') or 0) > 0)
-            rec_has_data = bool((rec.get('avgMarketPrice') or 0) > 0 or (rec.get('numberOfCompetitors') or 0) > 0)
-            if not cur_has_data and rec_has_data:
-                latest_by_vin[v] = rec
-
-    for r in rows:
-        vin = (r.get('vin') or '').strip()
-        ah = latest_by_vin.get(vin)
-        if ah:
-            avg_m = ah.get('avgMarketPrice') or 0
-            pcp = ah.get('maxposterSaleCost') or 0
-            imv = ah.get('imv') or 0
-            car_price = r.get('price') or 0
-            diff = (car_price - avg_m) if avg_m > 0 else None
-
-            pos = ah.get('vRatingPosition') or 0
-            comp = ah.get('numberOfCompetitors') or 0
-            if comp > 0:
-                rating_str = f"{pos} / {comp}"
-            elif pos > 0:
-                rating_str = str(pos)
-            else:
-                rating_str = '—'
-
-            views = (ah.get('avitoViews') or 0) + (ah.get('autoruViews') or 0) + (ah.get('dromViews') or 0)
-            marketing = ah.get('totalAdvertisingCost') or 0.0
-
-            r['autohub_cna'] = avg_m if avg_m > 0 else None
-            r['autohub_pcp'] = pcp if pcp > 0 else None
-            r['autohub_imv'] = imv if imv > 0 else None
-            r['autohub_diff'] = diff
-            r['autohub_rating'] = rating_str
-            r['autohub_views'] = views if views > 0 else None
-            r['autohub_marketing'] = marketing if marketing > 0 else None
-            r['autohub_date'] = ah.get('date')
-        else:
-            _set_empty_autohub(r)
 
 
 def iter_detail_rows(qs, limit=GROUP_DETAIL_LIMIT):

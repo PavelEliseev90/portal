@@ -1,38 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load static %}
 {% load custom_template_tags %}
 
 {% block title %} - Видение сделки Trade-In {% endblock %}
 
 {% block content %}
-<style>
-  .kors-funnel-page { padding: 1rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
-  .kors-funnel-header h2 { font-size: 1.6rem; font-weight: 600; color: #002a5a; }
-  .kors-panel {
-    background: #fff; border-radius: 1.3rem; padding: 1.25rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;
-  }
-  .kors-panel__head h3 { font-size: 1.1rem; font-weight: 700; color: #002a5a; margin-bottom: 0.75rem; }
-  .deal-table { font-size: 0.82rem; }
-  .deal-table th {
-    background: #002a5a; color: #fff; white-space: nowrap; vertical-align: middle;
-    position: sticky; top: 0; z-index: 2;
-  }
-  .deal-table td { vertical-align: top; }
-  .deal-table .col-group-op { background: #eef4ff; }
-  .deal-table .col-group-kp { background: #fff8ee; }
-  .op-stack + .op-stack { border-top: 1px dashed #b6c8e6; margin-top: 0.35rem; padding-top: 0.35rem; }
-  .reason-stat-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .reason-stat-item {
-    background: #f8fafc; border: 1px solid #dbe4f0; border-radius: 0.75rem;
-    padding: 0.45rem 0.8rem; cursor: pointer; font-size: 0.85rem;
-  }
-  .reason-stat-item strong { color: #002a5a; }
-  .table-scroll { max-height: 72vh; overflow: auto; }
-  .badge-no-est { background: #fee2e2; color: #991b1b; }
-</style>
-
 <div class="kors-funnel-page">
   <div class="kors-funnel-header d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>

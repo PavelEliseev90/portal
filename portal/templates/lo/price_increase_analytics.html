@@ -1,98 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load l10n %}
 
 {% block title %} — Запросы повышения цены {% endblock %}
 {% block title_navbar %} — Повышения {% endblock %}
 
 {% block content %}
-<style>
-  .zg-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
-  .zg-page h2 { font-size: 1.55rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
-  .zg-page .lead { color: #6c7a92; margin-bottom: 1.25rem; font-size: .95rem; }
-  .zg-filter, .zg-panel, .zg-metric {
-    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
-    box-shadow: 0 14px 32px rgba(0,23,61,.06);
-  }
-  .zg-filter { padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
-  .zg-filter .form-label {
-    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; margin-bottom: .35rem;
-  }
-  .zg-metric { padding: 1rem 1.15rem; height: 100%; }
-  .zg-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
-  .zg-metric .v { font-size: 1.65rem; font-weight: 650; color: #002a5a; line-height: 1.2; }
-  .zg-metric .s { color: #6c7a92; font-size: .85rem; }
-  .zg-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
-  .zg-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 1rem; }
-  .zg-hint { font-size: .82rem; color: #6c7a92; margin-top: .75rem; }
-  .table-zg th { white-space: nowrap; font-size: .78rem; color: #5b6b82; vertical-align: bottom; }
-  .table-zg td { vertical-align: middle; font-size: .85rem; }
-  .table-zg .cell-main { font-weight: 600; color: #002a5a; }
-  .pill {
-    display: inline-block; padding: .15rem .55rem; border-radius: 999px;
-    background: #eef2ff; color: #3730a3; font-size: .8rem; font-weight: 600;
-  }
-  .chart-wrap { position: relative; height: 340px; }
-  a.cell-link { text-decoration: none; color: inherit; }
-  a.cell-link:hover { color: #1d4ed8; text-decoration: underline; }
-  .top3-wrap { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 1.25rem; }
-  .top3-card {
-    display: flex; align-items: center; gap: .75rem;
-    background: #fff; border-radius: 1rem; border: 1px solid rgba(0,42,90,.08);
-    box-shadow: 0 10px 24px rgba(0,23,61,.05); padding: .75rem 1rem; min-width: 220px;
-  }
-  .badge-top {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 3.2rem; padding: .25rem .55rem; border-radius: 999px;
-    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  }
-  .badge-top-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #78350f; }
-  .badge-top-2 { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #1e293b; }
-  .badge-top-3 { background: linear-gradient(135deg, #fdba74, #ea580c); color: #7c2d12; }
-  .top3-card .name { font-weight: 600; color: #002a5a; }
-  .top3-card .cnt { color: #6c7a92; font-size: .85rem; }
-  .table-badge-top {
-    display: inline-block; margin-left: .35rem; padding: .1rem .45rem; border-radius: 999px;
-    font-size: .68rem; font-weight: 700; vertical-align: middle;
-  }
-  .mode-switch {
-    display: inline-flex; padding: .2rem; background: #eef2f7; border-radius: 999px; gap: .15rem;
-  }
-  .mode-switch .btn {
-    border: 0; border-radius: 999px; font-size: .85rem; font-weight: 600;
-    padding: .4rem .9rem; color: #5b6b82; background: transparent;
-  }
-  .mode-switch .btn.active {
-    background: #fff; color: #002a5a;
-    box-shadow: 0 2px 8px rgba(0,42,90,.12);
-  }
-  .kp-filter-badge {
-    display: inline-flex; align-items: center; gap: .35rem;
-    background: #e8f0f8; color: #002a5a; border-radius: 999px;
-    padding: .15rem .55rem; font-size: .78rem; margin: .15rem .15rem 0 0;
-    max-width: 100%;
-  }
-  .kp-filter-badge .lbl {
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14rem;
-  }
-  .kp-filter-remove {
-    cursor: pointer; border: 0; background: transparent; color: #6c7a92; padding: 0; line-height: 1;
-  }
-  .kp-filter-remove:hover { color: #002a5a; }
-  #unitDropdown {
-    max-height: 220px; overflow-y: auto; z-index: 1050;
-    display: none; background: #fff; border: 1px solid #dee2e6;
-    border-radius: .5rem; box-shadow: 0 12px 28px rgba(0,42,90,.12);
-  }
-  #unitDropdown .list-group-item {
-    margin-bottom: 0; cursor: pointer; border: 0; border-bottom: 1px solid #f1f5f9;
-    padding: .5rem .75rem; font-size: .88rem;
-  }
-  #unitDropdown .list-group-item:last-child { border-bottom: 0; }
-  #unitDropdown .list-group-item:hover { background: #eef4fb; }
-  .rate-cell { font-weight: 650; color: #0f766e; }
-  .rate-muted { color: #94a3b8; font-weight: 500; }
-</style>
-
 <div class="zg-page">
   <h2>Анализ запросов повышения цены</h2>
   <p class="lead">Запросы повышения из чата интерактивной оценки — по месту оценки или по источнику ДЦ.</p>

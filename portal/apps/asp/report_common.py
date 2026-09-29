@@ -439,3 +439,88 @@ def report_shell(
     if extra:
         data.update(extra)
     return data
+
+
+def set_empty_autohub(r: dict[str, Any]) -> None:
+    r['autohub_cna'] = None
+    r['autohub_pcp'] = None
+    r['autohub_imv'] = None
+    r['autohub_diff'] = None
+    r['autohub_rating'] = '—'
+    r['autohub_views'] = None
+    r['autohub_marketing'] = None
+    r['autohub_date'] = None
+
+
+def enrich_rows_with_autohub(rows: list[dict[str, Any]]) -> None:
+    """Обогащает список строк последними данными из таблицы Avtohub по VIN."""
+    if not rows:
+        return
+    try:
+        from avtosalon.models import Avtohub
+    except Exception:
+        for r in rows:
+            set_empty_autohub(r)
+        return
+
+    vins = [r['vin'].strip() for r in rows if r.get('vin') and r['vin'].strip()]
+    if not vins:
+        for r in rows:
+            set_empty_autohub(r)
+        return
+
+    records = (
+        Avtohub.objects.filter(vin__in=vins)
+        .order_by('vin', '-date')
+        .values(
+            'vin', 'date', 'price', 'avgMarketPrice', 'imv', 'maxposterSaleCost',
+            'vRatingPosition', 'numberOfCompetitors',
+            'totalAdvertisingCost', 'avitoViews', 'autoruViews', 'dromViews',
+        )
+    )
+
+    latest_by_vin: dict[str, dict] = {}
+    for rec in records:
+        v = rec['vin']
+        if v not in latest_by_vin:
+            latest_by_vin[v] = rec
+        else:
+            cur = latest_by_vin[v]
+            cur_has_data = bool((cur.get('avgMarketPrice') or 0) > 0 or (cur.get('numberOfCompetitors') or 0) > 0)
+            rec_has_data = bool((rec.get('avgMarketPrice') or 0) > 0 or (rec.get('numberOfCompetitors') or 0) > 0)
+            if not cur_has_data and rec_has_data:
+                latest_by_vin[v] = rec
+
+    for r in rows:
+        vin = (r.get('vin') or '').strip()
+        ah = latest_by_vin.get(vin)
+        if ah:
+            avg_m = ah.get('avgMarketPrice') or 0
+            pcp = ah.get('maxposterSaleCost') or 0
+            imv = ah.get('imv') or 0
+            car_price = r.get('price') or r.get('amount') or 0
+            diff = (car_price - avg_m) if avg_m > 0 else None
+
+            pos = ah.get('vRatingPosition') or 0
+            comp = ah.get('numberOfCompetitors') or 0
+            if comp > 0:
+                rating_str = f"{pos} / {comp}"
+            elif pos > 0:
+                rating_str = str(pos)
+            else:
+                rating_str = '—'
+
+            views = (ah.get('avitoViews') or 0) + (ah.get('autoruViews') or 0) + (ah.get('dromViews') or 0)
+            marketing = ah.get('totalAdvertisingCost') or 0.0
+
+            r['autohub_cna'] = avg_m if avg_m > 0 else None
+            r['autohub_pcp'] = pcp if pcp > 0 else None
+            r['autohub_imv'] = imv if imv > 0 else None
+            r['autohub_diff'] = diff
+            r['autohub_rating'] = rating_str
+            r['autohub_views'] = views if views > 0 else None
+            r['autohub_marketing'] = marketing if marketing > 0 else None
+            r['autohub_date'] = ah.get('date')
+        else:
+            set_empty_autohub(r)
+
