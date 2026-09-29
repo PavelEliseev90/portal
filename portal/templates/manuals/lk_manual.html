@@ -1,23 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 
 {% block title %} - {{ params.manual.title }} {% endblock %}
 
 {% block title_navbar %} - {{ params.manual.title }} {% endblock %}
 
 {% block content %}
-
-<style>
-	.manual-content img { max-width: 100%; height: auto; }
-	.manual-content table { max-width: 100%; }
-	.manual-toc a { text-decoration: none; }
-	.manual-toc a:hover { text-decoration: underline; }
-	@media print {
-		.portal-header, .manual-toolbar, .manual-aside, .navbar, footer { display: none !important; }
-		.portal-page { background: #fff; padding: 0; }
-		.portal-panel { box-shadow: none; }
-	}
-</style>
-
 <div class="portal-page">
 	<div class="portal-header">
 		<h2>{{ params.manual.title }}</h2>

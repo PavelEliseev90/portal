@@ -1,19 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — Калькулятор КМ (тест) {% endblock %}
 {% block title_navbar %} — Калькулятор КМ {% endblock %}
 
 {% block content %}
-<style>
-  .km-lab-panel { background: var(--portal-panel-bg, #fff); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-  .km-lab-winner { background: linear-gradient(135deg, #0f766e 0%, #115e59 100%); color: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; }
-  .km-lab-winner .amount { font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; }
-  .km-lab-car-meta { font-size: .875rem; opacity: .9; }
-  .km-breakdown-table td { vertical-align: top; }
-  .km-lab-filter .form-check-input { width: 1.15rem; height: 1.15rem; }
-</style>
-
 <div class="portal-page">
   <div class="container-fluid py-3">
     <p class="mb-2">

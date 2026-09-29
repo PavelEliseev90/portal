@@ -1,4 +1,4 @@
-<div class="" style="position: fixed;
+﻿<div class="" style="position: fixed;
 bottom: 0px;
 right: 0px; 
 padding: 20px;
@@ -114,17 +114,7 @@ z-index: 1030;">
                     
                 <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
                 <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
-
-                <style>
-                    #chat-emoji-wrap emoji-picker {
-                        width: 100%;
-                        max-width: 100%;
-                        height: min(55vh, 380px);
-                        --num-columns: 8;
-                    }
-                </style>
-
-                <div class="position-relative w-100">
+<div class="position-relative w-100">
                     <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding: 0rem;">
                         <textarea class="form-control border-end-0" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
                         {% if params.type == 'eco' and params.estimation and not params.user.profiles.user_sb %}

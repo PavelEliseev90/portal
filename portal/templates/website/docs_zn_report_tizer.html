@@ -1,465 +1,464 @@
 {% extends 'base_web.html' %}
+{% load l10n %}
 
-{% block url %} {% endblock %} 
+{% block title %} — {{ params.report_title }} {% endblock %}
+{% block title_navbar %} — {{ params.report_title }} {% endblock %}
 
-{% block title %} - заказ наряды отчет по расширениям {% endblock %}
-
-{% block title_navbar %} - заказ наряды отчет по расширениям {% endblock %}
-
-{% block extra_css %}
-<style>
-  .docs-zn-report-page {
-    padding: 1.5rem;
-    background: #f4f7fb;
-    min-height: 100vh;
-  }
-  
-  .docs-zn-report-header {
-    margin-bottom: 1.5rem;
-  }
-  
-  .docs-zn-report-card {
-    background: #fff;
-    border-radius: 1.3rem;
-    padding: 1.5rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
-    margin-bottom: 1.5rem;
-  }
-  
-  .table-responsive-sm {
-    border-radius: 1rem;
-    overflow: hidden;
-  }
-  
-  .table {
-    margin-bottom: 0;
-  }
-  
-  .table thead th {
-    background: #f8f9fa;
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6c7a92;
-    border-bottom: 2px solid #dee2e6;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    vertical-align: middle;
-    padding: 1rem 0.75rem;
-  }
-  
-  .table tbody td {
-    vertical-align: middle;
-    font-size: 0.9rem;
-    color: #002a5a;
-    padding: 0.75rem;
-  }
-  
-  .table tbody tr {
-    transition: background-color 0.2s;
-  }
-  
-  .table tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-  
-  .table-group-header {
-    transition: background-color 0.2s;
-  }
-  
-  .table-group-header:hover {
-    background-color: #e9ecef !important;
-  }
-  
-  .table-group-detail {
-    transition: background-color 0.2s;
-  }
-  
-  .table-group-detail:hover {
-    background-color: #f8f9fa !important;
-  }
-  
-  .toggle-icon {
-    transition: transform 0.3s ease;
-    display: inline-block;
-  }
-  
-  .toggle-icon.rotated {
-    transform: rotate(90deg);
-  }
-</style>
-{% endblock %}
-    
 {% block content %}
-<div class="docs-zn-report-page">
-  <div class="docs-zn-report-header">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
-      <i class="bi bi-funnel me-2"></i> Период с {{params.filtr.date_start|date:"d.m.Y"}} по {{params.filtr.date_end|date:"d.m.Y"}}
-    </button>
-  </div>
-
-  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content" style="border-radius: 1.3rem; border: none; box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);">
-        <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.3rem 1.3rem 0 0; padding: 1.25rem 1.5rem; border: none;">
-          <h5 class="modal-title" id="exampleModalLabel" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="bi bi-funnel-fill"></i> Параметры фильтрации
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1); opacity: 0.8;"></button>
-        </div>
-        
-        <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
-          <form method="get">
-            <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
-              <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.75rem;">Период</div>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label" style="font-size: 0.85rem; color: #6c7a92; font-weight: 500;">Дата с</label>
-                  <input class="form-control" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label" style="font-size: 0.85rem; color: #6c7a92; font-weight: 500;">Дата по</label>
-                  <input class="form-control" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                </div>
-              </div>
-            </div>
-            
-            <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
-              <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.75rem;">Тип группировки</div>
-              <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" name="unit_group" id="v2_5_0" value="no" autocomplete="off" {% if params.filtr.unit_group == 'no' %} checked {% endif %}>
-                <label class="btn btn-outline-primary" for="v2_5_0" style="border-radius: 0.75rem 0 0 0.75rem;">Подразделения</label>
-                
-                <input type="radio" class="btn-check" name="unit_group" id="v2_5_1" value="yes" autocomplete="off" {% if params.filtr.unit_group == 'yes' %} checked {% endif %}>
-                <label class="btn btn-outline-primary" for="v2_5_1" style="border-radius: 0 0.75rem 0.75rem 0;">Группы подразделений</label>
-              </div>
-            </div>
-
-            <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem; display: none;" id="form_select_unit_id">
-              <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Подразделение ДЦ</div>
-              <select class="form-select" id="select_unit_id" name="select_unit_id" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                <option value="">Все подразделения</option>
-                {% for unit in params.selected.units %}
-                  <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id|stringformat:"s" %} selected {% endif %}> {{unit.name}} {% if unit.ib.base %}({{unit.ib.base}}){% endif %}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem; display: none;" id="form_select_unit_group_id">
-              <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Группа подразделений ДЦ</div>
-              <div class="position-relative">
-                <input type="text" class="form-control" id="search_unit_group_report" placeholder="Поиск по группам ДЦ..." autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                <input type="hidden" name="select_unit_group_id" id="select_unit_group_id" value="{{params.filtr.filter_group_unit_id|default:''}}">
-                <div class="list-group position-absolute w-100 mt-1" id="unitGroupDropdownReport" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; border-radius: 0.75rem; box-shadow: 0 10px 30px rgba(0, 23, 61, 0.15); background: #fff;">
-                  <div class="list-group-item text-muted text-center" style="cursor: pointer; border: none; border-bottom: 1px solid rgba(0, 42, 90, 0.05);" onclick="clearSelectedUnitGroupReport();">
-                    <i class="bi bi-x-circle me-1"></i> Сбросить выбор
-                  </div>
-                  {% for unit in params.selected.units_group %}
-                    <div class="list-group-item unit-group-item-report" style="cursor: pointer; border: none; border-bottom: 1px solid rgba(0, 42, 90, 0.05); padding: 0.75rem 1rem; transition: background-color 0.2s;" data-id="{{unit.id}}" data-name="{{unit.name_bi}} / {{unit.name}}" onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='';">
-                      {{unit.name_bi}} / {{unit.name}}
-                    </div>
-                  {% endfor %}
-                </div>
-              </div>
-              <div id="selectedUnitGroupReport" class="mt-2"></div>
-            </div>
-
-            <div class="d-flex gap-2 justify-content-end">
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem;">Отмена</button>
-              <button class="btn btn-primary" type="submit" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
-                <i class="bi bi-check-circle me-1"></i> Применить
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+<div class="asp-rep" data-report-key="tizer">
+  <!-- Верхний блок заголовка и действий -->
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h2>{{ params.report_title }}</h2>
+      <p class="lead mb-0">{{ params.report_subtitle }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      {% if not params.is_initial and params.docs %}
+      <a class="btn btn-outline-success btn-sm px-3" href="?{{ request.GET.urlencode }}&export=xlsx" title="Выгрузить отчёт в Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      {% endif %}
     </div>
   </div>
 
-  <br>
-  <div class="docs-zn-report-card">
+  <!-- Блок KPI метрик (только при сформированном отчёте) -->
+  {% if not params.is_initial %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">Всего ЗН</div>
+        <div class="v">{{ params.totals.zn_count_all|floatformat:"0g" }}</div>
+        <div class="s">закрытые ЗН{% if params.report_type == 'mcu' %} (МКУ){% else %} (тизер){% endif %}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">ЗН с реком.</div>
+        <div class="v">{{ params.totals.zn_count|floatformat:"0g" }}</div>
+        <div class="s"><span class="badge bg-light text-dark border">{{ params.totals.zn_percent }}%</span> от всех ЗН</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">Отправлено ЗН</div>
+        <div class="v">{{ params.totals.zn_send_count|floatformat:"0g" }}</div>
+        <div class="s"><span class="badge bg-light text-dark border">{{ params.totals.zn_send_count_sr }}%</span> от всех ЗН</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">Согласовано ЗН</div>
+        <div class="v">{{ params.totals.zn_success_count|floatformat:"0g" }}</div>
+        <div class="s"><span class="badge bg-success-subtle text-success border border-success">{{ params.totals.zn_success_count_sr }}%</span> от отправл.</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">Всего реком.</div>
+        <div class="v">{{ params.totals.rec_total|floatformat:"0g" }}</div>
+        <div class="s">по всем ЗН</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">Согласовано</div>
+        <div class="v text-success">{{ params.totals.rec_2|floatformat:"0g" }}</div>
+        <div class="s"><span class="badge bg-success">{{ params.totals.rec_succ_pct }}%</span> от общего числа</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="asp-rep-metric">
+        <div class="t">На соглас. / Отклон.</div>
+        <div class="v">
+          <span class="text-warning text-dark">{{ params.totals.rec_1 }}</span> / <span class="text-danger">{{ params.totals.rec_3 }}</span>
+        </div>
+        <div class="s">неактивных: {{ params.totals.rec_0 }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Форма фильтрации (в стиле отчёта кумулятивной маржи АСП) -->
+  <form class="asp-rep-filter" method="get" id="tizerReportFilters">
+    <input type="hidden" name="apply" value="1">
+    <h6 class="mb-3 padding-title"><i class="bi bi-funnel me-1"></i> Параметры фильтрации</h6>
+
+    <div class="row g-3">
+      <!-- Период -->
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="metric-card-label-portal">Период</div>
+        <div class="row g-2">
+          <div class="col-6">
+            <input type="date" class="form-control form-control-sm" name="date_start" id="filter_date_start" value="{{ params.filtr.date_start|date:'Y-m-d' }}" required>
+          </div>
+          <div class="col-6">
+            <input type="date" class="form-control form-control-sm" name="date_end" id="filter_date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}" required>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mt-2">
+          <button type="button" class="btn btn-outline-secondary btn-preset-date" onclick="setDatePreset('current_month')">Текущий месяц</button>
+          <button type="button" class="btn btn-outline-secondary btn-preset-date" onclick="setDatePreset('prev_month')">Прошлый месяц</button>
+          <button type="button" class="btn btn-outline-secondary btn-preset-date" onclick="setDatePreset('last_30')">30 дней</button>
+          <button type="button" class="btn btn-outline-secondary btn-preset-date" onclick="setDatePreset('ytd')">С начала года</button>
+        </div>
+      </div>
+
+      <!-- Группировка -->
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="metric-card-label-portal">Тип группировки</div>
+        <div class="btn-group w-100" role="group">
+          <input type="radio" class="btn-check" name="unit_group" id="group_type_group" value="yes" {% if params.filtr.unit_group == 'yes' %}checked{% endif %}>
+          <label class="btn btn-outline-primary btn-sm" for="group_type_group">Группы подразделений</label>
+
+          <input type="radio" class="btn-check" name="unit_group" id="group_type_unit" value="no" {% if params.filtr.unit_group == 'no' %}checked{% endif %}>
+          <label class="btn btn-outline-primary btn-sm" for="group_type_unit">Подразделения</label>
+        </div>
+      </div>
+
+      <!-- Выбор подразделения или группы подразделений -->
+      <div class="col-12 col-md-12 col-lg-5">
+        <div id="unit_select_container" style="{% if params.filtr.unit_group != 'no' %}display: none;{% endif %}">
+          <div class="metric-card-label-portal">Подразделение ДЦ</div>
+          <select class="form-select form-select-sm" name="select_unit_id" id="select_unit_id">
+            <option value="">Все подразделения</option>
+            {% for unit in params.selected.units %}
+              <option value="{{ unit.id }}" {% if params.filtr.unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+                {{ unit.name }} {% if unit.ib.base %}({{ unit.ib.base }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="group_select_container" style="{% if params.filtr.unit_group == 'no' %}display: none;{% endif %}">
+          <div class="metric-card-label-portal">Группа подразделений ДЦ</div>
+          <select class="form-select form-select-sm" name="select_unit_group_id" id="select_unit_group_id">
+            <option value="">Все группы подразделений</option>
+            {% for g in params.selected.units_group %}
+              <option value="{{ g.id }}" {% if params.filtr.filter_group_unit_id == g.id|stringformat:"s" %}selected{% endif %}>
+                {{ g.name_bi|default:g.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Кнопки управления фильтром -->
+    <div class="row g-2 align-items-center mt-3 pt-2 border-top">
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm px-3">
+          <i class="bi bi-play-fill me-1"></i> Применить
+        </button>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary btn-sm px-3" href="{{ request.path }}">
+          <i class="bi bi-x-circle me-1"></i> Сбросить
+        </a>
+      </div>
+      {% if not params.is_initial and params.docs %}
+      <div class="col-auto ms-auto">
+        <a class="btn btn-outline-success btn-sm px-3" href="?{{ request.GET.urlencode }}&export=xlsx" title="Выгрузить в Excel">
+          <i class="bi bi-download me-1"></i> Excel
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Состояние при первом открытии (не формировать сразу) -->
+  {% if params.is_initial %}
+  <div class="asp-rep-panel text-center py-5">
+    <div class="my-4">
+      <div class="mb-3">
+        <i class="bi bi-bar-chart-line text-primary opacity-50" style="font-size: 3.5rem;"></i>
+      </div>
+      <h4 class="fw-semibold text-primary">Отчёт готов к формированию</h4>
+      <p class="text-muted mx-auto mb-4" style="max-width: 540px;">
+        Выберите период и тип группировки в панели фильтров выше, затем нажмите кнопку <strong>«Применить»</strong> для загрузки данных.
+      </p>
+      <button type="button" class="btn btn-primary px-4 py-2" onclick="document.getElementById('tizerReportFilters').submit();">
+        <i class="bi bi-play-fill me-1"></i> Сформировать отчёт
+      </button>
+    </div>
+  </div>
+
+  <!-- Таблица со сформированными данными -->
+  {% else %}
+  <div class="asp-rep-panel no-padding">
+    <div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-bottom bg-white">
+      <h3 class="mb-0">
+        {% if params.filtr.unit_group == 'no' %}
+          По подразделениям
+        {% else %}
+          По группам подразделений
+        {% endif %}
+      </h3>
+      <span class="small text-muted">
+        <i class="bi bi-info-circle me-1"></i> Кликните по строке подразделения/группы, чтобы раскрыть список рекомендаций
+      </span>
+    </div>
+
     <div class="table-responsive">
-      <table class="table table-hover">	
-        <thead style="border-radius: 1.3rem 1.3rem 0 0;">
-          <tr style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border-radius: 1.3rem 1.3rem 0 0; overflow: hidden;">
-            <th style="width: 40px; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">&nbsp;</th>
-            <th scope="col" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">
+      <table class="table table-sm table-hover table-asp mb-0">
+        <thead>
+          <tr>
+            <th style="width: 2rem;" class="text-center"></th>
+            <th>
               {% if params.filtr.unit_group == 'no' %}
                 Подразделение
               {% else %}
                 Группа подразделений
               {% endif %}
             </th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым отправлена хоть одна рекомендация)">Всего ЗН c отправленными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Не активных</th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">На согласовании</th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Согласовано</th>
-            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Отклонено</th>							
+            <th class="num" title="Всего закрытых заказ-нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом">Всего ЗН</th>
+            <th class="num" title="Всего уникальных заказ-нарядов с рекомендациями">ЗН с реком.</th>
+            <th class="num" title="Процент ЗН с рекомендациями к общему количеству ЗН">% реком.</th>
+            <th class="num" title="Всего уникальных заказ-нарядов с отправленными рекомендациями">Отправлено ЗН</th>
+            <th class="num" title="Процент ЗН с отправленными рекомендациями к общему числу ЗН">% отправл.</th>
+            <th class="num" title="Всего уникальных заказ-нарядов с согласованными рекомендациями">Согласовано ЗН</th>
+            <th class="num" title="Процент ЗН с согласованными рекомендациями к числу отправленных">% согласов.</th>
+            <th class="num" title="Общее количество рекомендаций">Всего реком.</th>
+            <th class="num" title="Не активных рекомендаций">Не активных</th>
+            <th class="num" title="Рекомендаций на согласовании">На соглас.</th>
+            <th class="num" title="Согласованных рекомендаций">Согласовано</th>
+            <th class="num" title="Отклонённых рекомендаций">Отклонено</th>
           </tr>
         </thead>
-
         <tbody>
           {% for doc in params.docs %}
-            {% if doc.unit_name|length > 0 and doc.unit_name != "ЕЦО ГК" %}
-              <tr class="table-group-header" data-unit-id="{{doc.unit_id}}" style="background-color: #f8f9fa; cursor: pointer;">
-                <td>
-                  <span class="icon-mbri-arrow-down toggle-icon" id="icon-dc{{doc.unit_id}}" style="color: #002a5a; font-size: 1rem;"></span>
-                </td>
-                <td>
-                  <strong style="color: #002a5a;">{{doc.unit_name}}</strong>
-                  {% if doc.unit_info %}
-                    <br><small class="text-muted" style="font-size: 0.8rem;">{{doc.unit_info}}</small>
-                  {% endif %}
-                </td>
-                <td class="text-end"><strong>{{doc.zn_count_all}}</strong></td>
-                <td class="text-end">
-                  <strong>{{doc.zn_count}}</strong>
-                  <small class="text-muted">({{doc.zn_percent}}%)</small>
-                </td>
-                <td class="text-end">
-                  <strong>{{doc.zn_send_count}}</strong>
-                  <small class="text-muted">({{doc.zn_send_count_sr}}%)</small>
-                </td>
-                <td class="text-end">
-                  <strong>{{doc.zn_success_count}}</strong>
-                  <small class="text-muted">({{doc.zn_success_count_sr}}%)</small>
-                </td>
-                <td class="text-end"><strong>{{doc.recomendations|length}}</strong></td>
-                <td class="text-end">
-                  <span class="badge bg-secondary">{{doc.recomendations_0}}</span>
-                </td>
-                <td class="text-end">
-                  <span class="badge bg-warning text-dark">{{doc.recomendations_1}}</span>
-                </td>
-                <td class="text-end">
-                  <span class="badge bg-success">{{doc.recomendations_2}}</span>
-                </td>
-                <td class="text-end">
-                  <span class="badge bg-danger">{{doc.recomendations_3}}</span>
-                </td>
-              </tr>
-              
-              {% for doc_rec in doc.recomendations %}
-                <tr class="table-group-detail detail-row-{{doc.unit_id}}" style="display: none; background-color: #fff;" onclick="window.location.href='/docs_recomendation/{{doc_rec.id}}'; return false">
-                  <td></td>
-                  <td>
-                    {% if params.filtr.unit_group == 'no' %}
-                      <span style="color: #6c7a92; font-size: 0.9rem;">
-                        № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime|date:"d.m.Y"}} - {{doc_rec.name}}
-                      </span>
-                    {% else %}
-                      <div>
-                        <strong style="color: #002a5a;">{{doc_rec.zn.unit.name}}</strong>
-                        <br>
-                        <span style="color: #6c7a92; font-size: 0.85rem;">
-                          № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime|date:"d.m.Y"}} - {{doc_rec.name}}
-                        </span>
-                      </div>
-                    {% endif %}
-                  </td>
-                  <td class="text-end">-</td>
-                  <td class="text-end">-</td>
-                  <td class="text-end">-</td>
-                  <td class="text-end">-</td>
-                  <td class="text-end">1</td>
-                  <td class="text-end">
-                    {% if doc_rec.customerStatus == 0 %}
-                      <span class="badge bg-secondary">1</span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-end">
-                    {% if doc_rec.customerStatus == 1 %}
-                      <span class="badge bg-warning text-dark">1</span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-end">
-                    {% if doc_rec.customerStatus == 2 %}
-                      <span class="badge bg-success">1</span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-end">
-                    {% if doc_rec.customerStatus == 3 %}
-                      <span class="badge bg-danger">1</span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            {% endif %}
-          {% endfor %}
-          
-          {% if not params.docs %}
+            <tr class="table-group-header" data-id="{{ doc.unit_id }}" data-group-type="{{ params.filtr.unit_group }}">
+              <td class="text-center"><span class="toggle-icon">▸</span></td>
+              <td>
+                <strong class="text-primary">{{ doc.unit_name }}</strong>
+                {% if doc.unit_info %}
+                  <br><small class="text-muted" style="font-size: 0.78rem;">{{ doc.unit_info }}</small>
+                {% endif %}
+              </td>
+              <td class="num"><strong>{{ doc.zn_count_all }}</strong></td>
+              <td class="num"><strong>{{ doc.zn_count }}</strong></td>
+              <td class="num"><span class="badge bg-light text-dark border">{{ doc.zn_percent }}%</span></td>
+              <td class="num"><strong>{{ doc.zn_send_count }}</strong></td>
+              <td class="num"><span class="badge bg-light text-dark border">{{ doc.zn_send_count_sr }}%</span></td>
+              <td class="num"><strong>{{ doc.zn_success_count }}</strong></td>
+              <td class="num">
+                <span class="badge {% if doc.zn_success_count_sr >= 50 %}bg-success-subtle text-success border border-success{% else %}bg-light text-dark border{% endif %}">
+                  {{ doc.zn_success_count_sr }}%
+                </span>
+              </td>
+              <td class="num"><strong>{{ doc.recomendations_total }}</strong></td>
+              <td class="num"><span class="badge bg-secondary">{{ doc.recomendations_0 }}</span></td>
+              <td class="num"><span class="badge bg-warning text-dark">{{ doc.recomendations_1 }}</span></td>
+              <td class="num"><span class="badge bg-success">{{ doc.recomendations_2 }}</span></td>
+              <td class="num"><span class="badge bg-danger">{{ doc.recomendations_3 }}</span></td>
+            </tr>
+          {% empty %}
             <tr>
-              <td colspan="11" class="text-center py-5" style="color: #6c7a92;">
-                <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
-                <p class="mt-2 mb-0">Данные не найдены</p>
+              <td colspan="14" class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-2 opacity-50 d-block mb-2"></i>
+                Данные по указанным фильтрам не найдены
               </td>
             </tr>
-          {% endif %}
-        </tbody>	
+          {% endfor %}
+        </tbody>
+        {% if params.docs %}
+        <tfoot>
+          <tr class="row-total">
+            <td></td>
+            <td><strong>ИТОГО</strong></td>
+            <td class="num"><strong>{{ params.totals.zn_count_all|floatformat:"0g" }}</strong></td>
+            <td class="num"><strong>{{ params.totals.zn_count|floatformat:"0g" }}</strong></td>
+            <td class="num"><span class="badge bg-light text-dark border">{{ params.totals.zn_percent }}%</span></td>
+            <td class="num"><strong>{{ params.totals.zn_send_count|floatformat:"0g" }}</strong></td>
+            <td class="num"><span class="badge bg-light text-dark border">{{ params.totals.zn_send_count_sr }}%</span></td>
+            <td class="num"><strong>{{ params.totals.zn_success_count|floatformat:"0g" }}</strong></td>
+            <td class="num">
+              <span class="badge {% if params.totals.zn_success_count_sr >= 50 %}bg-success-subtle text-success border border-success{% else %}bg-light text-dark border{% endif %}">
+                {{ params.totals.zn_success_count_sr }}%
+              </span>
+            </td>
+            <td class="num"><strong>{{ params.totals.rec_total|floatformat:"0g" }}</strong></td>
+            <td class="num"><span class="badge bg-secondary">{{ params.totals.rec_0 }}</span></td>
+            <td class="num"><span class="badge bg-warning text-dark">{{ params.totals.rec_1 }}</span></td>
+            <td class="num"><span class="badge bg-success">{{ params.totals.rec_2 }}</span></td>
+            <td class="num"><span class="badge bg-danger">{{ params.totals.rec_3 }}</span></td>
+          </tr>
+        </tfoot>
+        {% endif %}
       </table>
     </div>
-    
-    {% if params.paginator %}
-      <nav aria-label="Page navigation" class="mt-3">
-        <ul class="pagination justify-content-center">
-          {% if params.paginator.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ params.paginator.previous_page_number }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">&lt;</a>
-            </li>
-          {% endif %}
-          
-          {% for p in params.paginator.paginator.page_range %}
-            {% if params.paginator.number == p %}
-              <li class="page-item active"><a class="page-link">{{p}}</a></li>
-            {% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
-              <li class="page-item">
-                <a class="page-link" href="?page={{ p }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">{{ p }}</a>
-              </li>
-            {% endif %}
-          {% endfor %}
-          
-          {% if params.paginator.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ params.paginator.next_page_number }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">&gt;</a>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
   </div>
+  {% endif %}
 </div>
 
-<script language="JavaScript">
-  // Поиск по группам ДЦ для отчета
+<script>
+  function formatLocalDate(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function setDatePreset(preset) {
+    const startInput = document.getElementById('filter_date_start');
+    const endInput = document.getElementById('filter_date_end');
+    const now = new Date();
+
+    if (preset === 'current_month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      startInput.value = formatLocalDate(start);
+      endInput.value = formatLocalDate(now);
+    } else if (preset === 'prev_month') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      startInput.value = formatLocalDate(start);
+      endInput.value = formatLocalDate(end);
+    } else if (preset === 'last_30') {
+      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      startInput.value = formatLocalDate(start);
+      endInput.value = formatLocalDate(now);
+    } else if (preset === 'ytd') {
+      const start = new Date(now.getFullYear(), 0, 1);
+      startInput.value = formatLocalDate(start);
+      endInput.value = formatLocalDate(now);
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
-    const searchUnitGroupReport = document.getElementById('search_unit_group_report');
-    const unitGroupDropdownReport = document.getElementById('unitGroupDropdownReport');
-    const unitGroupIdInputReport = document.getElementById('select_unit_group_id');
-    const selectedUnitGroupReport = document.getElementById('selectedUnitGroupReport');
-    let selectedUnitGroupDataReport = null;
-    
-    if (searchUnitGroupReport && unitGroupDropdownReport && unitGroupIdInputReport) {
-      function updateSelectedUnitGroupReport() {
-        selectedUnitGroupReport.innerHTML = '';
-        if (selectedUnitGroupDataReport) {
-          selectedUnitGroupReport.innerHTML = `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${selectedUnitGroupDataReport.name} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="clearSelectedUnitGroupReport();"></button></span>`;
-        }
-      }
-      
-      window.updateSelectedUnitGroupReport = updateSelectedUnitGroupReport;
-      window.clearSelectedUnitGroupReport = function() {
-        selectedUnitGroupDataReport = null;
-        unitGroupIdInputReport.value = '';
-        searchUnitGroupReport.value = '';
-        updateSelectedUnitGroupReport();
-      };
-      
-      searchUnitGroupReport.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        const items = unitGroupDropdownReport.querySelectorAll('.unit-group-item-report');
-        items.forEach(item => {
-          const text = item.textContent.toLowerCase();
-          item.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
-      });
-      
-      searchUnitGroupReport.addEventListener('focus', function() {
-        unitGroupDropdownReport.style.display = 'block';
-      });
-      
-      searchUnitGroupReport.addEventListener('click', function() {
-        unitGroupDropdownReport.style.display = 'block';
-      });
-      
-      unitGroupDropdownReport.querySelectorAll('.unit-group-item-report').forEach(item => {
-        item.addEventListener('click', function() {
-          const id = this.getAttribute('data-id');
-          const name = this.getAttribute('data-name');
-          selectedUnitGroupDataReport = { id: id, name: name };
-          unitGroupIdInputReport.value = id;
-          searchUnitGroupReport.value = name;
-          unitGroupDropdownReport.style.display = 'none';
-          updateSelectedUnitGroupReport();
-        });
-      });
-      
-      document.addEventListener('click', function(e) {
-        if (!searchUnitGroupReport.contains(e.target) && !unitGroupDropdownReport.contains(e.target)) {
-          unitGroupDropdownReport.style.display = 'none';
-        }
-      });
-      
-      // Загрузка выбранной группы
-      {% if params.filtr.filter_group_unit_id %}
-      const initialGroupId = {{ params.filtr.filter_group_unit_id }};
-      if (initialGroupId) {
-        const groupItem = unitGroupDropdownReport.querySelector(`.unit-group-item-report[data-id="${initialGroupId}"]`);
-        if (groupItem) {
-          const id = groupItem.getAttribute('data-id');
-          const name = groupItem.getAttribute('data-name');
-          selectedUnitGroupDataReport = { id: id, name: name };
-          unitGroupIdInputReport.value = id;
-          searchUnitGroupReport.value = name;
-          updateSelectedUnitGroupReport();
-        }
-      }
-      {% endif %}
-    }
-    
-    // Переключение видимости фильтров
-    $('input[type=radio][name=unit_group]').change(function() {
-      visible_filtr_dc_and_group();
-    });
+    // Переключение видимости селекторов подразделений/групп
+    const radioGroup = document.getElementById('group_type_group');
+    const radioUnit = document.getElementById('group_type_unit');
+    const unitContainer = document.getElementById('unit_select_container');
+    const groupContainer = document.getElementById('group_select_container');
 
-    function visible_filtr_dc_and_group(){
-      let group = $('input[name="unit_group"]:checked').val();
-      if (group == 'yes') {
-        $('div[id="form_select_unit_id"]').hide();
-        $('div[id="form_select_unit_group_id"]').show();
-      }
-      else if (group == 'no') {
-        $('div[id="form_select_unit_id"]').show();
-        $('div[id="form_select_unit_group_id"]').hide();
+    function syncGroupVisibility() {
+      if (radioUnit && radioUnit.checked) {
+        if (unitContainer) unitContainer.style.display = 'block';
+        if (groupContainer) groupContainer.style.display = 'none';
+      } else {
+        if (unitContainer) unitContainer.style.display = 'none';
+        if (groupContainer) groupContainer.style.display = 'block';
       }
     }
 
-    $(document).ready(function() {
-      visible_filtr_dc_and_group();
+    if (radioGroup) radioGroup.addEventListener('change', syncGroupVisibility);
+    if (radioUnit) radioUnit.addEventListener('change', syncGroupVisibility);
 
-      // Раскрытие/сворачивание строк с деталями
-      $('.table-group-header').click(function(e) {
-        e.preventDefault();
-        const unitId = $(this).data('unit-id');
-        const icon = $(this).find('.toggle-icon');
-        const detailRows = $('.detail-row-' + unitId);
-        
-        if (detailRows.is(':visible')) {
-          detailRows.slideUp(200);
-          icon.removeClass('rotated');
-          icon.attr('class', 'icon-mbri-arrow-down toggle-icon');
-        } else {
-          detailRows.slideDown(200);
-          icon.addClass('rotated');
-          icon.attr('class', 'icon-mbri-arrow-right toggle-icon rotated');
+    // Раскрытие строк с AJAX-загрузкой деталей рекомендаций
+    document.querySelectorAll('.table-group-header').forEach(function(row) {
+      row.addEventListener('click', function(e) {
+        // Игнорируем клик по ссылкам внутри строки
+        if (e.target.tagName === 'A' || e.target.closest('a')) return;
+
+        const headerRow = this;
+        const id = headerRow.getAttribute('data-id');
+        const groupType = headerRow.getAttribute('data-group-type') || 'yes';
+        const icon = headerRow.querySelector('.toggle-icon');
+        const dateStart = document.getElementById('filter_date_start') ? document.getElementById('filter_date_start').value : '';
+        const dateEnd = document.getElementById('filter_date_end') ? document.getElementById('filter_date_end').value : '';
+
+        const detailRows = document.querySelectorAll('.detail-row-group-' + id);
+
+        // Если уже загружено ранее — просто переключаем отображение
+        if (headerRow.classList.contains('loaded')) {
+          const isVisible = headerRow.classList.contains('expanded');
+          detailRows.forEach(function(dr) {
+            dr.style.display = isVisible ? 'none' : '';
+          });
+          if (isVisible) {
+            headerRow.classList.remove('expanded');
+            if (icon) icon.textContent = '▸';
+          } else {
+            headerRow.classList.add('expanded');
+            if (icon) icon.textContent = '▾';
+          }
+          return;
         }
+
+        // Первое раскрытие: показываем строку загрузки и запрашиваем AJAX
+        headerRow.classList.add('expanded');
+        if (icon) icon.textContent = '▾';
+
+        const loadingRow = document.createElement('tr');
+        loadingRow.className = 'table-group-detail loading-row-' + id;
+        loadingRow.innerHTML = '<td colspan="14" class="text-center py-3 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Загрузка рекомендаций...</td>';
+        headerRow.parentNode.insertBefore(loadingRow, headerRow.nextSibling);
+
+        const url = `${window.location.pathname}?ajax=details&id=${encodeURIComponent(id)}&group_type=${encodeURIComponent(groupType)}&date_start=${encodeURIComponent(dateStart)}&date_end=${encodeURIComponent(dateEnd)}`;
+
+        fetch(url)
+          .then(function(resp) { return resp.json(); })
+          .then(function(data) {
+            loadingRow.remove();
+            headerRow.classList.add('loaded');
+
+            if (!data.ok || !data.rows || data.rows.length === 0) {
+              const emptyRow = document.createElement('tr');
+              emptyRow.className = 'table-group-detail detail-row-group-' + id;
+              emptyRow.innerHTML = '<td class="text-center"></td><td colspan="13" class="text-muted py-2"><small>Нет рекомендаций за выбранный период</small></td>';
+              headerRow.parentNode.insertBefore(emptyRow, headerRow.nextSibling);
+              return;
+            }
+
+            let lastRow = headerRow;
+            data.rows.forEach(function(rec) {
+              const tr = document.createElement('tr');
+              tr.className = 'table-group-detail detail-row-group-' + id;
+
+              let subText = '';
+              if (groupType === 'yes' && rec.unit_name) {
+                subText = `<div class="fw-semibold text-primary" style="font-size: 0.8rem;">${escapeHtml(rec.unit_name)}</div>`;
+              }
+
+              const st0 = rec.status === 0 ? '<span class="badge bg-secondary">1</span>' : '<span class="text-muted small">—</span>';
+              const st1 = rec.status === 1 ? '<span class="badge bg-warning text-dark">1</span>' : '<span class="text-muted small">—</span>';
+              const st2 = rec.status === 2 ? '<span class="badge bg-success">1</span>' : '<span class="text-muted small">—</span>';
+              const st3 = rec.status === 3 ? '<span class="badge bg-danger">1</span>' : '<span class="text-muted small">—</span>';
+              const recLink = escapeHtml(rec.detail_url || `/docs_recomendation/${rec.id}/`);
+
+              tr.innerHTML = `
+                <td></td>
+                <td>
+                  ${subText}
+                  <a href="${recLink}" target="_blank" rel="noopener" class="rec-link">
+                    № ${escapeHtml(rec.nomer)} / ${escapeHtml(rec.date)} — ${escapeHtml(rec.name)}
+                  </a>
+                </td>
+                <td class="num text-muted small">—</td>
+                <td class="num text-muted small">—</td>
+                <td class="num text-muted small">—</td>
+                <td class="num text-muted small">—</td>
+                <td class="num text-muted small">—</td>
+                <td class="num text-muted small">—</td>
+                <td class="num text-muted small">—</td>
+                <td class="num fw-semibold">1</td>
+                <td class="num">${st0}</td>
+                <td class="num">${st1}</td>
+                <td class="num">${st2}</td>
+                <td class="num">${st3}</td>
+              `;
+              headerRow.parentNode.insertBefore(tr, lastRow.nextSibling);
+              lastRow = tr;
+            });
+          })
+          .catch(function(err) {
+            loadingRow.remove();
+            const errRow = document.createElement('tr');
+            errRow.className = 'table-group-detail detail-row-group-' + id;
+            errRow.innerHTML = '<td class="text-center"></td><td colspan="13" class="text-danger py-2"><small>Ошибка загрузки рекомендаций</small></td>';
+            headerRow.parentNode.insertBefore(errRow, headerRow.nextSibling);
+          });
       });
     });
   });
 </script>
-
 {% endblock %}

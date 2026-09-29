@@ -1,4 +1,4 @@
-{% comment %}
+﻿{% comment %}
   Файлы приёмки 2-го комплекта колёс.
   Ожидает: params.reception, params.files, params.sent_to_wheels
 {% endcomment %}
@@ -76,37 +76,6 @@
 		{% endfor %}
 	</div>
 </div>
-
-<style>
-.kolesa-photo-card {
-	background: #fff;
-	border-radius: 0.75rem;
-	border: 2px solid rgba(0, 42, 90, 0.1);
-	overflow: hidden;
-}
-.kolesa-photo-card-image-wrapper {
-	position: relative;
-	aspect-ratio: 4/3;
-	background: #f0f2f5;
-}
-.kolesa-photo-card-image {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
-}
-.kolesa-photo-card-overlay {
-	position: absolute;
-	top: 0.4rem;
-	right: 0.4rem;
-	opacity: 1;
-}
-@media (hover: hover) and (pointer: fine) {
-	.kolesa-photo-card-overlay { opacity: 0; transition: opacity 0.2s; }
-	.kolesa-photo-card:hover .kolesa-photo-card-overlay { opacity: 1; }
-}
-</style>
-
 <script>
 (function() {
 	var camera = document.getElementById('kolesaPhotosCamera');

@@ -1,103 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — Отчёт по лотам Авито {% endblock %}
 {% block title_navbar %} — Отчёт по лотам {% endblock %}
 
 {% block head %}
-<style>
-  .aav-an-hero {
-    border-radius: 14px;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    background: linear-gradient(135deg, #eef4fb 0%, #fff 48%, #f8fafc 100%);
-    padding: 1.25rem 1.35rem;
-    margin-bottom: 1.25rem;
-  }
-  .aav-an-hero h2 { margin: 0 0 0.35rem; font-weight: 650; color: #002a5a; }
-  .aav-kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.75rem;
-  }
-  .aav-kpi {
-    border-radius: 12px;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    background: #fff;
-    padding: 0.85rem 1rem;
-  }
-  .aav-kpi .label {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #8ea1ba;
-    margin-bottom: 0.2rem;
-  }
-  .aav-kpi .value { font-size: 1.45rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
-  .aav-kpi .hint { font-size: 0.78rem; color: #6c7a92; margin-top: 0.15rem; }
-  .aav-counter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.65rem;
-  }
-  .aav-counter {
-    border-radius: 12px;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    padding: 0.75rem 0.9rem;
-    background: #f8fafc;
-  }
-  a.aav-counter {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    transition: box-shadow .15s ease, transform .15s ease, outline .15s;
-    cursor: pointer;
-  }
-  a.aav-counter:hover {
-    box-shadow: 0 4px 14px rgba(0, 42, 90, 0.12);
-    transform: translateY(-1px);
-  }
-  a.aav-counter.active-filter {
-    outline: 2px solid #00509d;
-    outline-offset: 1px;
-  }
-  .aav-counter.won { background: #ecfdf5; border-color: #bbf7d0; }
-  .aav-counter.lost { background: #fef2f2; border-color: #fecaca; }
-  .aav-counter.waiting_seller { background: #fff7ed; border-color: #fed7aa; }
-  .aav-counter.no_selection,
-  .aav-counter.not_redeemed,
-  .aav-counter.we_refused,
-  .aav-counter.not_taken,
-  .aav-counter.canceled,
-  .aav-counter.finished { background: #f1f5f9; border-color: #e2e8f0; }
-  .aav-counter .c-label { font-size: 0.8rem; color: #475569; }
-  .aav-counter .c-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; }
-  .aav-counter .c-pct { font-size: 0.78rem; color: #6c7a92; margin-top: 0.1rem; }
-  .lr-table-wrap { overflow-x: auto; }
-  .lr-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
-  .lr-table th {
-    text-align: left; padding: .5rem .45rem; color: #6c7a92; font-weight: 600;
-    border-bottom: 1px solid rgba(0,42,90,.1); white-space: nowrap;
-    position: sticky; top: 0; background: #fff; z-index: 1;
-  }
-  .lr-table td {
-    padding: .5rem .45rem; border-bottom: 1px solid rgba(0,42,90,.06);
-    vertical-align: middle;
-  }
-  .lr-table tr.lr-row { cursor: pointer; }
-  .lr-table tr.lr-row:hover { background: #f5f8fc; }
-  .lr-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .lr-neg { color: #b91c1c; font-weight: 650; }
-  .lr-pos { color: #166534; font-weight: 650; }
-  .lr-muted { color: #94a3b8; }
-  .lr-badge {
-    display: inline-block; font-size: .72rem; font-weight: 650;
-    padding: .12rem .4rem; border-radius: .3rem;
-  }
-  .lr-badge.lost { background: #fecaca; color: #991b1b; }
-  .lr-badge.won { background: #bbf7d0; color: #14532d; }
-  .lr-badge.waiting_seller { background: #fed7aa; color: #9a3412; }
-  .lr-badge.other { background: #e2e8f0; color: #334155; }
-</style>
 {% endblock %}
 
 {% block content %}

@@ -35,7 +35,19 @@
   {% elif col.key == 'group_price' %}<td>{{ r.group_price|default:"—" }}</td>
   {% elif col.key == 'stage_price' %}<td>{{ r.stage_price|default:"—" }}</td>
   {% elif col.key == 'iznos' %}<td>{% if r.has_iznos %}{% if r.iznos %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+  {% elif col.key == 'status' %}<td>{{ r.status_name|default:"—" }}</td>
   {% elif col.key == 'type_sale' %}<td>{{ r.type_sale|default:"—" }}</td>
+  {% elif col.key == 'autohub_cna' %}<td class="num">{% if r.autohub_cna %}{{ r.autohub_cna|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_pcp' %}<td class="num">{% if r.autohub_pcp %}{{ r.autohub_pcp|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_imv' %}<td class="num">{% if r.autohub_imv %}{{ r.autohub_imv|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_diff' %}
+  <td class="num {% if r.autohub_diff is not None %}{% if r.autohub_diff > 0 %}neg{% elif r.autohub_diff < 0 %}pos{% endif %}{% endif %}">
+    {% if r.autohub_diff is not None %}{% if r.autohub_diff > 0 %}+{% endif %}{{ r.autohub_diff|floatformat:"0g" }}{% else %}—{% endif %}
+  </td>
+  {% elif col.key == 'autohub_rating' %}<td>{{ r.autohub_rating|default:"—" }}</td>
+  {% elif col.key == 'autohub_views' %}<td class="num">{% if r.autohub_views is not None %}{{ r.autohub_views|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_marketing' %}<td class="num">{% if r.autohub_marketing %}{{ r.autohub_marketing|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_date' %}<td>{% if r.autohub_date %}{{ r.autohub_date|date:"d.m.Y" }}{% else %}—{% endif %}</td>
   {% elif col.key == 'amount' %}<td class="num">{{ r.amount|floatformat:"0g" }}</td>
   {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
   {% elif col.key == 'outlay' %}<td class="num">{{ r.outlay|floatformat:"0g" }}</td>
@@ -119,6 +131,8 @@
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}{% if r.year %} · {{ r.year }}{% endif %}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
+  {% elif col.key == 'status' %}<td>{{ r.status_name|default:"—" }}</td>
+  {% elif col.key == 'type_sale' %}<td>{{ r.type_sale|default:"—" }}</td>
   {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}{% if r.auction %} <span class="badge bg-warning text-dark">аукцион</span>{% endif %}</td>
   {% elif col.key == 'group_price' %}<td>{{ r.group_price|default:"—" }}</td>
   {% elif col.key == 'stage_price' %}<td>{{ r.stage_price|default:"—" }}</td>

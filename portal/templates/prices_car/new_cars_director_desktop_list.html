@@ -1,28 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} — {{ params.list.section_label }} {% endblock %}
 {% block title_navbar %} — {{ params.list.section_label }} {% endblock %}
 
 {% block content %}
-<style>
-  .ncd-list-page { padding: 1.25rem; }
-  .ncd-list-header {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: 1rem; margin-bottom: 1.25rem;
-  }
-  .ncd-list-header h1 { font-size: 1.5rem; font-weight: 700; color: #002a5a; margin: 0; }
-  .ncd-list-meta { color: #6c7a92; font-size: 0.9rem; }
-  .ncd-list-table-wrap { overflow-x: auto; background: #fff; border-radius: 1rem; border: 1px solid #e8eef5; }
-  .ncd-list-table { width: 100%; font-size: 0.9rem; margin-bottom: 0; }
-  .ncd-list-table th {
-    color: #6c7a92; font-weight: 600; white-space: nowrap;
-    border-bottom: 2px solid #e8eef5; padding: 0.65rem 0.5rem;
-  }
-  .ncd-list-table td { padding: 0.65rem 0.5rem; border-bottom: 1px solid #f0f4f8; vertical-align: top; }
-  .ncd-list-empty { padding: 2rem; text-align: center; color: #8ea1ba; }
-</style>
-
 {% with list=params.list %}
 <div class="ncd-list-page">
   <div class="ncd-list-header">

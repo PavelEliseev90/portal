@@ -1,28 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
 {% block title %} - Минимальный КМ по автомобилям {% endblock %}
 {% block title_navbar %} - Мин. КМ по автомобилям {% endblock %}
 
 {% block content %}
-<style>
-  .min-km-page { background: #f4f7fb; min-height: 100vh; padding: 1.5rem 0; }
-  .min-km-header { background: #fff; border-radius: 1.2rem; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
-  .min-km-filter { background: #fff; border-radius: 1.2rem; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
-  .filter-search-wrap { position: relative; margin-bottom: 0.75rem; }
-  .filter-search-wrap label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.35rem; display: block; }
-  .filter-dropdown { max-height: 200px; overflow-y: auto; position: absolute; left: 0; right: 0; z-index: 1000; background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,23,61,0.12); display: none; }
-  .filter-dropdown.show { display: block; }
-  .filter-dropdown .list-group-item { cursor: pointer; margin: 0; }
-  .filter-dropdown .form-check-input { cursor: pointer; }
-  .min-km-table-wrap { background: #fff; border-radius: 1.2rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
-  .min-km-table { margin: 0; }
-  .min-km-table th { background: #f8f9fc; font-weight: 600; color: #002a5a; font-size: 0.85rem; padding: 0.75rem 1rem; border-bottom: 1px solid rgba(0,42,90,0.08); }
-  .min-km-table td { padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0,42,90,0.06); }
-  .min-km-table tr:last-child td { border-bottom: none; }
-  .btn-rule { padding: 0.35rem 0.65rem; font-size: 0.85rem; border-radius: 0.5rem; }
-</style>
-
 <div class="min-km-page">
   <div class="container-fluid">
     <div class="min-km-header d-flex flex-wrap justify-content-between align-items-center gap-2">

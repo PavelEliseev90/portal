@@ -1,67 +1,10 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 {% load l10n %}
 
 {% block title %} — Аналитика оценок по ЦГ {% endblock %}
 {% block title_navbar %} — Оценки / ЦГ {% endblock %}
 
 {% block content %}
-<style>
-  .zg-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
-  .zg-page h2 { font-size: 1.55rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
-  .zg-page .lead { color: #6c7a92; margin-bottom: 1.25rem; font-size: .95rem; }
-  .zg-filter, .zg-panel, .zg-metric {
-    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
-    box-shadow: 0 14px 32px rgba(0,23,61,.06);
-  }
-  .zg-filter { padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
-  .zg-filter .form-label {
-    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; margin-bottom: .35rem;
-  }
-  .zg-metric { padding: 1rem 1.15rem; height: 100%; }
-  .zg-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
-  .zg-metric .v { font-size: 1.65rem; font-weight: 650; color: #002a5a; line-height: 1.2; }
-  .zg-metric .s { color: #6c7a92; font-size: .85rem; }
-  .zg-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
-  .zg-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 1rem; }
-  .zg-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
-  .zg-panel-head h3 { margin: 0; }
-  .zg-hint { font-size: .82rem; color: #6c7a92; margin-top: .75rem; }
-  .table-zg th { white-space: nowrap; font-size: .78rem; color: #5b6b82; vertical-align: bottom; }
-  .table-zg td { vertical-align: middle; font-size: .85rem; }
-  .table-zg .cell-main { font-weight: 600; color: #002a5a; white-space: nowrap; }
-  .table-zg .cell-sub { font-size: .75rem; color: #6c7a92; white-space: nowrap; }
-  .table-zg .cell-empty { color: #cbd5e1; }
-  .row-total { background: #f8fafc; font-weight: 600; }
-  .col-total { background: #f8fafc; }
-  .pill {
-    display: inline-block; padding: .15rem .55rem; border-radius: 999px;
-    background: #eef2ff; color: #3730a3; font-size: .8rem; font-weight: 600;
-  }
-  .rate-ok { color: #0f9d58; font-weight: 600; }
-  .rate-mid { color: #d97706; font-weight: 600; }
-  .rate-low { color: #dc2626; font-weight: 600; }
-  .chart-wrap { position: relative; height: 380px; }
-  .chart-wrap-day { height: 420px; }
-  .chart-mode .btn { border-radius: 999px; font-size: .82rem; }
-  .chart-split .btn { border-radius: 999px; font-size: .82rem; }
-  .pill-unit {
-    display: inline-block; padding: .15rem .55rem; border-radius: .5rem;
-    background: #eff6ff; color: #1e40af; font-size: .78rem; font-weight: 600;
-    max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .zg-callout {
-    background: #fffbeb; border: 1px solid #fde68a; border-radius: 1rem;
-    padding: 1rem 1.15rem; margin-bottom: 1.25rem; color: #78350f; font-size: .9rem;
-  }
-  .zg-callout code { background: #fef3c7; padding: .1rem .35rem; border-radius: .35rem; font-size: .82rem; }
-  a.cell-link {
-    display: block; text-decoration: none; color: inherit; border-radius: .5rem;
-    padding: .2rem .15rem; transition: background .15s;
-  }
-  a.cell-link:hover { background: #eef2ff; }
-  .chart-wrap canvas { cursor: pointer; }
-</style>
-
 <div class="zg-page">
   <h2>Аналитика оценок по ценовым группам</h2>
   <p class="lead">Помесячное количество оценок с разбивкой по ЦГ и процентом принятия.

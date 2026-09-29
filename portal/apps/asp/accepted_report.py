@@ -187,12 +187,14 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'rlk_id': row.get('rlk_id'),
         'rlk_nomer': row.get('rlk__nomer') or '',
         'auction': bool(row.get('auction')),
+        'type_sale': 'Аукцион' if bool(row.get('auction')) else 'Розница',
+        'status_name': 'Принят',
         'slug': '',
     }
 
 
 def _apply_stock_price_fields(rows: list[dict]) -> None:
-    """ЦГ и этап УС с карточки автомобиля, связанной с листом оценки."""
+    """ЦГ, этап УС, статус и тип продажи с карточки автомобиля."""
     lo_ids = []
     seen = set()
     for row in rows:
@@ -216,7 +218,7 @@ def _apply_stock_price_fields(rows: list[dict]) -> None:
             RefCarsOrganization.objects
             .filter(lo_id__in=part)
             .order_by('-pk')
-            .values('lo_id', 'vin', 'slug', 'group_price__name', 'stage_price__name')
+            .values('lo_id', 'vin', 'slug', 'group_price__name', 'stage_price__name', 'type_sale__name', 'status__name')
         )
         for item in qs:
             lo_id = item.get('lo_id')
@@ -225,6 +227,8 @@ def _apply_stock_price_fields(rows: list[dict]) -> None:
                 'group_price': item.get('group_price__name') or '',
                 'stage_price': item.get('stage_price__name') or '',
                 'slug': item.get('slug') or '',
+                'type_sale': item.get('type_sale__name') or '',
+                'status_name': item.get('status__name') or 'Принят',
             }
             if vin and (lo_id, vin) not in by_lo_vin:
                 by_lo_vin[(lo_id, vin)] = payload
@@ -241,6 +245,10 @@ def _apply_stock_price_fields(rows: list[dict]) -> None:
         row['group_price'] = info.get('group_price') or ''
         row['stage_price'] = info.get('stage_price') or ''
         row['slug'] = info.get('slug') or ''
+        if info.get('type_sale'):
+            row['type_sale'] = info['type_sale']
+        if info.get('status_name'):
+            row['status_name'] = info['status_name']
 
 
 def _lo_rows_from_values(values: list[dict]) -> list[dict[str, Any]]:

@@ -1,4 +1,4 @@
-{% extends 'base_web.html' %}
+﻿{% extends 'base_web.html' %}
 
 {% block url %} {% endblock %} 
 
@@ -7,79 +7,6 @@
 {% block title_navbar %} - HelpDesk - Список задач {% endblock %}
     
 {% block content %}
-
-<style>
-    @media (max-width: 767.98px) {
-        .helpdesk-nav-btns .btn {
-            width: 100%;
-            margin-bottom: .5rem;
-        }
-        .table-wrapper-scroll-y {
-            display: none;
-        }
-        .mobile-task-card {
-            border-left: 4px solid var(--bs-secondary);
-        }
-        .mobile-task-card .card-body {
-            padding: 1rem 1.25rem;
-        }
-        .mobile-task-card .task-meta span {
-            margin-right: .65rem;
-        }
-        .filters-card .card-body {
-            padding: 1rem;
-        }
-        .filters-card .form-floating {
-            margin-bottom: .75rem;
-        }
-    }
-
-    @media (min-width: 768px) {
-        .mobile-task-list {
-            display: none;
-        }
-    }
-
-    .btn-sort {
-        border: none;
-        background: transparent;
-        padding: 0;
-        margin: 0;
-        font-weight: 600;
-        color: inherit;
-    }
-    .btn-sort:focus {
-        outline: none;
-        box-shadow: none;
-    }
-    .sort-indicator {
-        font-size: .75rem;
-        margin-left: .25rem;
-    }
-    
-    #searchSuggestions {
-        margin-top: 0.25rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 0.375rem;
-    }
-    #searchSuggestions .list-group-item {
-        cursor: pointer;
-        border-left: 3px solid transparent;
-    }
-    #searchSuggestions .list-group-item:hover {
-        background-color: #f8f9fa;
-        border-left-color: #0d6efd;
-    }
-    #searchSuggestions .task-id {
-        font-weight: 600;
-        color: #0d6efd;
-    }
-    #searchSuggestions .task-meta {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-</style>
-
 <div class="row mb-3">
     <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2 align-items-center">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
