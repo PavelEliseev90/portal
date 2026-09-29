@@ -29,3 +29,4 @@ tools/maxposter_auction/build/
 tools/maxposter_auction/dist/
 tools/maxposter_auction/.venv/
 logs/django_errors.log
+
